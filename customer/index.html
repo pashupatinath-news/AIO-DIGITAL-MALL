@@ -1,86 +1,727 @@
 <!DOCTYPE html>
 <html lang="hi">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VAISHNAV - Digital Mall</title>
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#FF6600">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <style>
-    *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif}
-    body{background:#FFF8F0}
-    header{background:#FF6600;color:white;padding:15px;text-align:center;position:sticky;top:0;z-index:10}
-    header h1{font-size:20px}
-    .container{padding:15px}
-    .product-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
-    .card{background:white;border-radius:12px;padding:10px;box-shadow:0 2px 6px rgba(0,0,0,0.1)}
-    .card img{width:100%;height:120px;object-fit:cover;border-radius:8px}
-    .card h3{font-size:14px;margin:8px 0;color:#333}
-    .card p{color:#FF6600;font-weight:bold;font-size:16px}
-    .btn{background:#FF6600;color:white;border:none;padding:8px 12px;border-radius:6px;width:100%;margin-top:8px;font-weight:bold}
-    .cart-btn{position:fixed;bottom:20px;right:20px;background:#FF6600;color:white;border:none;border-radius:50%;width:55px;height:55px;font-size:24px;box-shadow:0 4px 8px rgba(0,0,0,0.3)}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>A.I.O. DIGITAL MALL</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#FF6600">
+
+<style>
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:Arial,sans-serif;
+}
+
+body{
+  background:#FFF8F0;
+  color:#222;
+}
+
+header{
+  background:#FF6600;
+  color:white;
+  padding:15px;
+  text-align:center;
+  position:sticky;
+  top:0;
+  z-index:10;
+}
+
+header h1{
+  font-size:20px;
+}
+
+.container{
+  padding:15px;
+}
+
+.product-grid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:12px;
+}
+
+.card{
+  background:white;
+  border-radius:12px;
+  padding:10px;
+  box-shadow:0 2px 6px #0002;
+}
+
+.card img{
+  width:100%;
+  height:120px;
+  object-fit:cover;
+  border-radius:8px;
+  background:#eee;
+}
+
+.card h3{
+  font-size:14px;
+  margin:8px 0;
+}
+
+.card p{
+  color:#FF6600;
+  font-weight:bold;
+  font-size:16px;
+}
+
+.detail{
+  font-size:12px;
+  color:#666;
+  margin-top:5px;
+}
+
+.btn{
+  background:#FF6600;
+  color:white;
+  border:none;
+  padding:9px;
+  border-radius:7px;
+  width:100%;
+  margin-top:8px;
+  font-weight:bold;
+}
+
+.cart-btn{
+  position:fixed;
+  bottom:20px;
+  right:20px;
+  background:#FF6600;
+  color:white;
+  border:none;
+  border-radius:50%;
+  width:58px;
+  height:58px;
+  font-size:24px;
+  box-shadow:0 4px 8px #0005;
+  z-index:20;
+}
+
+#cartBox{
+  display:none;
+  position:fixed;
+  bottom:90px;
+  left:10px;
+  right:10px;
+  background:white;
+  padding:15px;
+  border-radius:12px;
+  box-shadow:0 4px 15px #0004;
+  z-index:19;
+  max-height:70vh;
+  overflow:auto;
+}
+
+.cart-item{
+  border-bottom:1px solid #ddd;
+  padding:8px 0;
+}
+
+.empty{
+  text-align:center;
+  padding:20px;
+  color:#777;
+}
+
+.loading{
+  text-align:center;
+  padding:20px;
+}
+</style>
 </head>
+
 <body>
 
 <header>
-  <h1>🚩 VAISHNAV DIGITAL MALL</h1>
-  <p>100% Pure Veg</p>
+  <h1>🚩 A.I.O. DIGITAL MALL</h1>
+  <p>All Products • Local Shops • COD</p>
 </header>
 
 <div class="container">
-  <h2 style="margin-bottom:12px;color:#FF6600">Fresh Products</h2>
-  <div class="product-grid" id="productList">
-    <p>Loading products...</p>
+
+  <h2 style="margin-bottom:12px;color:#FF6600">
+    🛍️ Live Products
+  </h2>
+
+  <div
+    class="product-grid"
+    id="productList"
+  >
+    <div class="loading">
+      Firebase se products load ho rahe hain...
+    </div>
   </div>
+
 </div>
 
-<button class="cart-btn">🛒</button>
+
+<!-- CART -->
+
+<div id="cartBox">
+
+  <h3>🛒 Your Cart</h3>
+
+  <div id="cartItems"></div>
+
+  <h3 style="margin-top:10px">
+    Total: ₹<span id="cartTotal">0</span>
+  </h3>
+
+  <button
+    class="btn"
+    onclick="placeCODOrder()"
+  >
+    📦 PLACE COD ORDER
+  </button>
+
+</div>
+
+
+<button
+  class="cart-btn"
+  onclick="toggleCart()"
+>
+  🛒
+  <span id="cartCount">0</span>
+</button>
+
 
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyBCt-8L1Y39_ZVJXKuoDOoWvW26MK",
-    authDomain: "vaishnav-mall.firebaseapp.com",
-    projectId: "vaishnav-mall",
-    storageBucket: "vaishnav-mall.appspot.com",
-    messagingSenderId: "860038090103",
-    appId: "1:860038090103:web:69800f46e4a0976a672",
-    measurementId: "G-LSNWVC0B88"
-  };
+/* =====================================================
+   FIREBASE - A.I.O. DIGITAL MALL
+===================================================== */
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+import {
+  initializeApp
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
-  async function loadProducts(){
-    const querySnapshot = await getDocs(collection(db, "products"));
-    const productList = document.getElementById('productList');
-    productList.innerHTML = "";
-    if(querySnapshot.empty){
-      productList.innerHTML = "<p>No products yet. Team se add karwao</p>";
-    }
-    querySnapshot.forEach((doc) => {
-      let p = doc.data();
-      productList.innerHTML += `
-        <div class="card">
-          <img src="${p.image}" alt="${p.name}">
-          <h3>${p.name}</h3>
-          <p>₹${p.price}</p>
-          <button class="btn">Add to Cart</button>
-        </div>
-      `;
-    });
+import {
+  getFirestore,
+  collection,
+  onSnapshot,
+  addDoc,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+
+const firebaseConfig = {
+
+  apiKey:
+  "AIzaSyAyH9RRJTEETFh4zHWwCMO4d6qMielJQFA",
+
+  authDomain:
+  "aio-digital-mall.firebaseapp.com",
+
+  projectId:
+  "aio-digital-mall",
+
+  storageBucket:
+  "aio-digital-mall.firebasestorage.app",
+
+  messagingSenderId:
+  "501384049673",
+
+  appId:
+  "1:501384049673:web:968bd8311cc700f82874d8",
+
+  measurementId:
+  "G-TNDT9FYNRP"
+
+};
+
+
+const app =
+initializeApp(firebaseConfig);
+
+const db =
+getFirestore(app);
+
+
+/* =====================================================
+   CART
+===================================================== */
+
+let cart =
+JSON.parse(
+  localStorage.getItem("aio_cart") || "[]"
+);
+
+
+function updateCart(){
+
+  document
+  .getElementById("cartCount")
+  .innerText=cart.length;
+
+
+  let total=0;
+
+  cart.forEach(item=>{
+    total += Number(item.price || 0);
+  });
+
+
+  document
+  .getElementById("cartTotal")
+  .innerText=total;
+
+
+  const box =
+  document.getElementById("cartItems");
+
+
+  if(cart.length===0){
+
+    box.innerHTML=
+    `<div class="empty">
+      Cart empty hai.
+    </div>`;
+
+    return;
   }
-  loadProducts();
+
+
+  box.innerHTML =
+  cart.map(
+    (item,index)=>`
+
+      <div class="cart-item">
+
+        <b>${escapeHtml(item.name)}</b>
+
+        <br>
+
+        ₹${Number(item.price || 0)}
+
+        <button
+          class="btn"
+          onclick="removeCart(${index})"
+        >
+          REMOVE
+        </button>
+
+      </div>
+
+    `
+  ).join("");
+
+}
+
+
+window.removeCart=function(index){
+
+  cart.splice(index,1);
+
+  localStorage.setItem(
+    "aio_cart",
+    JSON.stringify(cart)
+  );
+
+  updateCart();
+
+};
+
+
+window.toggleCart=function(){
+
+  const box =
+  document.getElementById("cartBox");
+
+  box.style.display =
+  box.style.display==="block"
+  ?
+  "none"
+  :
+  "block";
+
+};
+
+
+window.addToCart=function(
+  id,
+  name,
+  price
+){
+
+  cart.push({
+
+    id:id,
+
+    name:name,
+
+    price:Number(price || 0)
+
+  });
+
+
+  localStorage.setItem(
+    "aio_cart",
+    JSON.stringify(cart)
+  );
+
+
+  updateCart();
+
+  alert(
+    name+
+    " cart me add ho gaya ✅"
+  );
+
+};
+
+
+/* =====================================================
+   LIVE PRODUCTS
+===================================================== */
+
+const productList =
+document.getElementById("productList");
+
+
+onSnapshot(
+  collection(db,"products"),
+
+  snapshot=>{
+
+    productList.innerHTML="";
+
+
+    if(snapshot.empty){
+
+      productList.innerHTML=
+      `<div class="empty">
+        Abhi products available nahi hain.
+        <br>
+        Team Panel se product add karo.
+      </div>`;
+
+      return;
+    }
+
+
+    snapshot.forEach(doc=>{
+
+      const p=doc.data();
+
+
+      if(p.status &&
+         p.status!=="active"){
+
+        return;
+
+      }
+
+
+      const div =
+      document.createElement("div");
+
+      div.className="card";
+
+
+      const photo =
+      p.photo || "";
+
+
+      div.innerHTML=`
+
+        ${
+          photo
+          ?
+          `<img
+             src="${escapeHtml(photo)}"
+             alt="${escapeHtml(p.name || "")}"
+           >`
+          :
+          `<div
+             style="
+             height:120px;
+             background:#eee;
+             border-radius:8px;
+             display:flex;
+             align-items:center;
+             justify-content:center;
+             color:#777;
+             "
+           >
+             No Image
+           </div>`
+        }
+
+
+        <h3>
+          ${escapeHtml(
+            p.name || "Product"
+          )}
+        </h3>
+
+
+        <p>
+          ₹${Number(p.price || 0)}
+        </p>
+
+
+        ${
+          p.detail
+          ?
+          `<div class="detail">
+            ${escapeHtml(p.detail)}
+          </div>`
+          :
+          ""
+        }
+
+
+        ${
+          p.category
+          ?
+          `<div class="detail">
+            Category:
+            ${escapeHtml(p.category)}
+          </div>`
+          :
+          ""
+        }
+
+
+        ${
+          p.type==="affiliate"
+
+          ?
+
+          `<button
+            class="btn"
+            onclick="
+              window.open(
+                '${escapeHtml(p.link || "#")}',
+                '_blank'
+              )
+            "
+          >
+            🛒 BUY NOW
+          </button>`
+
+          :
+
+          `<button
+            class="btn"
+            onclick="
+              addToCart(
+                '${doc.id}',
+                '${escapeHtml(p.name || "Product")}',
+                '${Number(p.price || 0)}'
+              )
+            "
+          >
+            ADD TO CART
+          </button>`
+        }
+
+      `;
+
+
+      productList.appendChild(div);
+
+    });
+
+  },
+
+  error=>{
+
+    console.error(error);
+
+    productList.innerHTML=
+    `<div class="empty">
+      Firebase connection error.
+      <br><br>
+      ${escapeHtml(error.message)}
+    </div>`;
+
+  }
+
+);
+
+
+/* =====================================================
+   COD ORDER
+===================================================== */
+
+window.placeCODOrder =
+async function(){
+
+  if(cart.length===0){
+
+    alert("Cart empty hai");
+
+    return;
+
+  }
+
+
+  const phone =
+  prompt(
+    "Customer mobile number daalo"
+  );
+
+
+  if(!phone){
+
+    return;
+
+  }
+
+
+  const address =
+  prompt(
+    "Complete delivery address daalo"
+  );
+
+
+  if(!address){
+
+    return;
+
+  }
+
+
+  const total =
+  cart.reduce(
+    (sum,item)=>
+    sum+
+    Number(item.price || 0),
+    0
+  );
+
+
+  const deliveryOTP =
+  Math.floor(
+    1000+
+    Math.random()*9000
+  );
+
+
+  try{
+
+    await addDoc(
+      collection(db,"orders"),
+      {
+
+        items:cart,
+
+        phone:phone,
+
+        address:address,
+
+        total:total,
+
+        paymentMethod:"COD",
+
+        status:"New",
+
+        deliveryOTP:deliveryOTP,
+
+        createdAt:
+        serverTimestamp()
+
+      }
+    );
+
+
+    cart=[];
+
+
+    localStorage.removeItem(
+      "aio_cart"
+    );
+
+
+    updateCart();
+
+
+    document
+    .getElementById("cartBox")
+    .style.display="none";
+
+
+    alert(
+      "🎉 COD ORDER PLACED ✅\n\n"+
+      "Delivery OTP: "+
+      deliveryOTP
+    );
+
+
+  }catch(error){
+
+    console.error(error);
+
+    alert(
+      "Order place nahi hua:\n"+
+      error.message
+    );
+
+  }
+
+};
+
+
+/* =====================================================
+   ESCAPE HTML
+===================================================== */
+
+function escapeHtml(value){
+
+  return String(value)
+
+  .replace(/&/g,"&amp;")
+
+  .replace(/</g,"&lt;")
+
+  .replace(/>/g,"&gt;")
+
+  .replace(/"/g,"&quot;")
+
+  .replace(/'/g,"&#039;");
+
+}
+
+
+/* =====================================================
+   INITIAL CART
+===================================================== */
+
+updateCart();
+
+
 </script>
 
+
 <script>
-if('serviceWorker' in navigator){
-  navigator.serviceWorker.register('sw.js');
+
+if(
+  "serviceWorker"
+  in navigator
+){
+
+  navigator
+  .serviceWorker
+  .register("sw.js")
+  .catch(
+    error=>
+    console.error(
+      "Service Worker:",
+      error
+    )
+  );
+
 }
+
 </script>
 
 </body>
