@@ -1,485 +1,91 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
 <meta charset="UTF-8">
-<meta name="viewport"
-      content="width=device-width,initial-scale=1">
-
-<meta name="theme-color"
-      content="#ff6600">
-
-<link rel="manifest"
-      href="manifest.json">
-
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AIO DIGITAL MALL - TEAM</title>
 
+<link rel="manifest" href="manifest.json">
+
 <style>
-
-*{
-  box-sizing:border-box
-}
-
 body{
-  margin:0;
-  background:#111;
-  color:#fff;
-  font-family:Arial,sans-serif
+ margin:0;
+ min-height:100vh;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ background:#111;
+ color:white;
+ font-family:Arial;
 }
-
-header{
-  background:#ff6600;
-  padding:15px;
-  position:sticky;
-  top:0;
-  z-index:50
+.box{
+ width:90%;
+ max-width:420px;
+ background:#1d1d1d;
+ padding:25px;
+ border-radius:15px;
+ box-shadow:0 5px 30px #000;
 }
-
-.top{
-  display:flex;
-  justify-content:space-between;
-  align-items:center
+input{
+ width:100%;
+ box-sizing:border-box;
+ padding:14px;
+ margin:8px 0;
+ border-radius:8px;
+ border:1px solid #555;
+ background:#222;
+ color:white;
 }
-
-.logo{
-  font-size:20px;
-  font-weight:bold
-}
-
-.container{
-  max-width:1100px;
-  margin:auto;
-  padding:15px
-}
-
-.card{
-  background:#1e1e1e;
-  border-radius:12px;
-  padding:15px;
-  margin-bottom:15px;
-  box-shadow:0 2px 10px #000
-}
-
-.grid{
-  display:grid;
-  grid-template-columns:
-    repeat(auto-fit,minmax(180px,1fr));
-  gap:12px
-}
-
-.stat{
-  background:#222;
-  padding:18px;
-  border-radius:12px;
-  text-align:center
-}
-
-.stat b{
-  display:block;
-  font-size:30px;
-  color:#ff6600
-}
-
-input,select,textarea{
-  width:100%;
-  padding:12px;
-  margin:6px 0;
-  border:0;
-  border-radius:8px
-}
-
 button{
-  border:0;
-  padding:10px 14px;
-  border-radius:8px;
-  font-weight:bold;
-  cursor:pointer;
-  margin:4px
+ width:100%;
+ padding:13px;
+ border:0;
+ border-radius:8px;
+ background:#ff6600;
+ color:white;
+ font-weight:bold;
+ margin-top:8px;
 }
-
-.orange{
-  background:#ff6600;
-  color:white
-}
-
-.red{
-  background:#d32f2f;
-  color:white
-}
-
-.green{
-  background:#2e7d32;
-  color:white
-}
-
-.white{
-  background:white;
-  color:#222
-}
-
-.order{
-  background:#242424;
-  border-left:5px solid #ff6600;
-  padding:15px;
-  margin:10px 0;
-  border-radius:8px
-}
-
-.product{
-  background:#242424;
-  border-radius:10px;
-  overflow:hidden
-}
-
-.product img{
-  width:100%;
-  height:160px;
-  object-fit:cover
-}
-
-.productContent{
-  padding:10px
-}
-
-.hidden{
-  display:none!important
-}
-
-#loginScreen{
-  min-height:100vh;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  padding:20px
-}
-
-.loginBox{
-  width:100%;
-  max-width:400px;
-  background:#1e1e1e;
-  padding:25px;
-  border-radius:15px
-}
-
+#recaptcha{margin:10px 0}
 </style>
-
 </head>
 
 <body>
 
-<div id="loginScreen">
+<div class="box">
 
-  <div class="loginBox">
+<h1>🚩 AIO DIGITAL MALL</h1>
+<h2>TEAM LOGIN</h2>
 
-    <h1>🚩 AIO DIGITAL MALL</h1>
+<div id="recaptcha"></div>
 
-    <h3>TEAM PANEL</h3>
+<input
+ id="phone"
+ type="tel"
+ placeholder="+919876543210"
+>
 
-    <input
-      id="teamEmail"
-      type="email"
-      placeholder="Team Email"
-    >
+<button onclick="sendTeamOTP()">
+SEND OTP
+</button>
 
-    <input
-      id="teamPassword"
-      type="password"
-      placeholder="Password"
-    >
+<input
+ id="otp"
+ type="number"
+ placeholder="OTP"
+>
 
-    <button
-      class="orange"
-      style="width:100%"
-      onclick="teamLogin()"
-    >
-      LOGIN
-    </button>
+<button onclick="verifyTeamOTP()">
+VERIFY & ENTER
+</button>
 
-    <p id="loginError"></p>
-
-  </div>
+<p id="status"></p>
 
 </div>
 
-
-<div id="app" class="hidden">
-
-<header>
-
-  <div class="top">
-
-    <div class="logo">
-      🚩 AIO DIGITAL MALL — TEAM
-    </div>
-
-    <button
-      class="white"
-      onclick="teamLogout()"
-    >
-      LOGOUT
-    </button>
-
-  </div>
-
-</header>
-
-
-<div class="container">
-
-  <div class="grid">
-
-    <div class="stat">
-      <b id="statOrders">0</b>
-      Orders
-    </div>
-
-    <div class="stat">
-      <b id="statNewOrders">0</b>
-      New Orders
-    </div>
-
-    <div class="stat">
-      <b id="statProducts">0</b>
-      Products
-    </div>
-
-    <div class="stat">
-      <b id="statShops">0</b>
-      Shops
-    </div>
-
-  </div>
-
-
-  <!-- SHOP -->
-
-  <div class="card">
-
-    <h2>🏪 ADD LOCAL SHOP</h2>
-
-    <input
-      id="shopName"
-      placeholder="Shop Name"
-    >
-
-    <select id="shopCategory">
-
-      <option>Hotel & Food</option>
-      <option>Grocery</option>
-      <option>Fashion</option>
-      <option>Electronics</option>
-      <option>Education</option>
-      <option>Jewellery</option>
-      <option>Property</option>
-      <option>Mobile & AC</option>
-
-    </select>
-
-    <input
-      id="shopPhone"
-      placeholder="Shop Phone"
-    >
-
-    <input
-      id="shopAddress"
-      placeholder="Shop Address"
-    >
-
-    <button
-      class="orange"
-      onclick="addShop()"
-    >
-      ADD SHOP
-    </button>
-
-  </div>
-
-
-  <!-- LOCAL PRODUCT -->
-
-  <div class="card">
-
-    <h2>📦 ADD LOCAL PRODUCT</h2>
-
-    <input
-      id="pName"
-      placeholder="Product Name"
-    >
-
-    <input
-      id="pPrice"
-      type="number"
-      placeholder="Price ₹"
-    >
-
-    <input
-      id="pPhoto"
-      placeholder="Product Image URL"
-    >
-
-    <select id="pCategory">
-
-      <option>Grocery</option>
-      <option>Hotel & Food</option>
-      <option>Fashion</option>
-      <option>Electronics</option>
-      <option>Education</option>
-      <option>Jewellery</option>
-      <option>Property</option>
-      <option>Mobile & AC</option>
-
-    </select>
-
-    <input
-      id="pStock"
-      type="number"
-      value="1"
-      min="0"
-      placeholder="Stock"
-    >
-
-    <select id="pShop">
-
-      <option value="">
-        Select Shop
-      </option>
-
-    </select>
-
-    <button
-      class="orange"
-      onclick="addLocalProduct()"
-    >
-      SAVE PRODUCT
-    </button>
-
-  </div>
-
-
-  <!-- AFFILIATE -->
-
-  <div class="card">
-
-    <h2>🛒 AMAZON / AFFILIATE</h2>
-
-    <input
-      id="aName"
-      placeholder="Affiliate Product Name"
-    >
-
-    <input
-      id="aPrice"
-      type="number"
-      placeholder="Display Price ₹"
-    >
-
-    <input
-      id="aPhoto"
-      placeholder="Product Image URL"
-    >
-
-    <input
-      id="aLink"
-      placeholder="Amazon Product Link"
-    >
-
-    <button
-      class="orange"
-      onclick="addAffiliateProduct()"
-    >
-      SAVE AFFILIATE PRODUCT
-    </button>
-
-  </div>
-
-
-  <!-- BANNER -->
-
-  <div class="card">
-
-    <h2>🖼️ MAIN BANNER</h2>
-
-    <input
-      id="bannerURL"
-      placeholder="Banner Image URL"
-    >
-
-    <button
-      class="orange"
-      onclick="saveBanner()"
-    >
-      SAVE BANNER
-    </button>
-
-  </div>
-
-
-  <!-- ORDERS -->
-
-  <div class="card">
-
-    <h2>📦 LIVE COD ORDERS</h2>
-
-    <div id="orders">
-      Loading orders...
-    </div>
-
-  </div>
-
-
-  <!-- PRODUCTS -->
-
-  <div class="card">
-
-    <h2>🛍️ LIVE PRODUCTS</h2>
-
-    <div id="products"
-         class="grid">
-      Loading products...
-    </div>
-
-  </div>
-
-
-  <!-- SHOPS -->
-
-  <div class="card">
-
-    <h2>🏪 LIVE SHOPS</h2>
-
-    <div id="shops"
-         class="grid">
-      Loading shops...
-    </div>
-
-  </div>
-
-
-  <div class="card">
-
-    <button
-      class="orange"
-      onclick="refreshData()"
-    >
-      🔄 REFRESH DATA
-    </button>
-
-    <button
-      class="white"
-      onclick="openCustomer()"
-    >
-      🌐 OPEN CUSTOMER WEBSITE
-    </button>
-
-  </div>
-
-</div>
-
-</div>
-
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
 <script src="app.js"></script>
 
