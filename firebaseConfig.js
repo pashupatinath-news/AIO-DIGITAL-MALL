@@ -1,14 +1,9 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "TERI_API_KEY",
-  authDomain: "TERA_AUTH_DOMAIN",
-  projectId: "TERA_PROJECT_ID",
-  storageBucket: "TERA_BUCKET",
-  messagingSenderId: "TERA_SENDER_ID",
-  appId: "TERA_APP_ID"
+export const firebaseConfig = {
+  apiKey: "AIzaSyAyH9RRJTEETFh4zHWwCMO4d6qMielJQFA",
+  authDomain: "aio-digital-mall.firebaseapp.com",
+  projectId: "aio-digital-mall",
+  storageBucket: "aio-digital-mall.firebasestorage.app",
+  messagingSenderId: "501384049673",
+  appId: "1:501384049673:web:968bd8311cc700f82874d8",
+  measurementId: "G-TNDT9FYNRP"
 };
-
-const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
