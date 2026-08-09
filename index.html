@@ -1,76 +1,291 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VAISHNAV DIGITAL MALL - PURE VEG</title>
-<link rel="manifest" href="manifest.json"><meta name="theme-color" content="#FF6600">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>AIO DIGITAL MALL</title>
+
+<link rel="manifest" href="manifest.json">
+
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;
+ font-family:Arial,sans-serif;
+ background:#fff8f0;
+ color:#222;
+}
+header{
+ background:#ff6600;
+ color:#fff;
+ padding:15px;
+ position:sticky;
+ top:0;
+ z-index:10;
+}
+.header{
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ gap:10px;
+}
+.logo{
+ font-size:21px;
+ font-weight:bold;
+}
+button{
+ border:0;
+ border-radius:8px;
+ padding:10px 14px;
+ cursor:pointer;
+ font-weight:bold;
+}
+.btn{
+ background:#ff6600;
+ color:white;
+}
+.cart-btn{
+ background:white;
+ color:#ff6600;
+}
+.container{
+ max-width:1100px;
+ margin:auto;
+ padding:15px;
+}
+.search{
+ width:100%;
+ padding:14px;
+ border:1px solid #ddd;
+ border-radius:10px;
+ margin:15px 0;
+ font-size:16px;
+}
+.banner{
+ min-height:160px;
+ border-radius:15px;
+ background:#eee center/cover no-repeat;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ margin-bottom:20px;
+}
+.banner h2{
+ background:rgba(0,0,0,.6);
+ color:#fff;
+ padding:12px;
+ border-radius:8px;
+}
+.categories{
+ display:grid;
+ grid-template-columns:repeat(4,1fr);
+ gap:10px;
+}
+.category{
+ background:white;
+ padding:18px 8px;
+ text-align:center;
+ border-radius:12px;
+ box-shadow:0 2px 8px #ddd;
+ cursor:pointer;
+}
+.products{
+ display:grid;
+ grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+ gap:15px;
+}
+.card{
+ background:#fff;
+ border-radius:12px;
+ padding:12px;
+ box-shadow:0 2px 10px #ddd;
+}
+.card img{
+ width:100%;
+ height:160px;
+ object-fit:cover;
+ border-radius:8px;
+}
+.card h3{
+ margin:8px 0;
+}
+.price{
+ font-size:19px;
+ font-weight:bold;
+}
+.stock{
+ font-size:13px;
+ color:#777;
+}
+#cartBox{
+ background:white;
+ padding:15px;
+ border-radius:12px;
+ margin-top:25px;
+ box-shadow:0 2px 10px #ddd;
+}
+.modal{
+ display:none;
+ position:fixed;
+ inset:0;
+ background:rgba(0,0,0,.65);
+ z-index:100;
+ align-items:center;
+ justify-content:center;
+ padding:15px;
+}
+.modal-content{
+ background:white;
+ width:100%;
+ max-width:420px;
+ padding:20px;
+ border-radius:15px;
+}
+.modal input,.modal textarea{
+ width:100%;
+ padding:12px;
+ margin:7px 0;
+ border:1px solid #ddd;
+ border-radius:8px;
+}
+.close{
+ float:right;
+ background:#eee;
+}
+.timer{
+ text-align:center;
+ background:#222;
+ color:#fff;
+ padding:10px;
+ border-radius:8px;
+ margin:15px 0;
+}
+footer{
+ text-align:center;
+ padding:30px 15px;
+}
+@media(max-width:600px){
+ .categories{grid-template-columns:repeat(2,1fr)}
+ .products{grid-template-columns:repeat(2,1fr)}
+ .card img{height:130px}
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<div class="header">
+<div class="logo">🚩 AIO DIGITAL MALL</div>
+<div>
+<button onclick="openLogin()" class="cart-btn">LOGIN</button>
+<button onclick="toggleCart()" class="cart-btn">
+🛒 CART (<span id="cartCount">0</span>)
+</button>
+</div>
+</div>
+</header>
+
+<div class="container">
+
+<div class="banner" id="mainBanner">
+<h2>THE AIO DIGITAL MALL</h2>
+</div>
+
+<input
+ id="search"
+ class="search"
+ placeholder="Search products..."
+ oninput="searchProducts()"
+>
+
+<div class="timer">
+FLASH SALE ENDS IN:
+<strong id="timer">02:59:59</strong>
+</div>
+
+<h2>🛍️ CATEGORIES</h2>
+
+<div class="categories">
+<div class="category" onclick="filterCategory('Hotel & Food')">🍽️<br>Hotel & Food</div>
+<div class="category" onclick="filterCategory('Grocery')">🛒<br>Grocery</div>
+<div class="category" onclick="filterCategory('Fashion')">👕<br>Fashion</div>
+<div class="category" onclick="filterCategory('Electronics')">📱<br>Electronics</div>
+<div class="category" onclick="filterCategory('Education')">📚<br>Education</div>
+<div class="category" onclick="filterCategory('Jewellery')">💎<br>Jewellery</div>
+<div class="category" onclick="filterCategory('Property')">🏠<br>Property</div>
+<div class="category" onclick="filterCategory('Mobile & AC')">📱<br>Mobile & AC</div>
+</div>
+
+<h2>🔥 LOCAL PRODUCTS</h2>
+<div id="localProducts" class="products">
+<p>Firebase se products load ho rahe hain...</p>
+</div>
+
+<h2>🛒 AMAZON DEALS</h2>
+<div id="affiliateProducts" class="products">
+<p>Deals load ho rahe hain...</p>
+</div>
+
+<div id="cartBox">
+<h2>🛒 Your Cart</h2>
+<div id="cartItems">
+<p>Cart khali hai.</p>
+</div>
+
+<hr>
+
+<h3>Total: ₹<span id="cartTotal">0</span></h3>
+
+<button class="btn" onclick="placeOrder()">
+📦 ORDER KARO - COD
+</button>
+</div>
+
+</div>
+
+<footer>
+🚩 AIO DIGITAL MALL<br>
+Local Shops • Products • COD
+</footer>
+
+<!-- LOGIN -->
+
+<div id="loginModal" class="modal">
+<div class="modal-content">
+
+<button class="close" onclick="closeLogin()">X</button>
+
+<h2>📱 Mobile OTP Login</h2>
+
+<div id="recaptcha"></div>
+
+<input
+ id="phone"
+ type="tel"
+ placeholder="+919876543210"
+>
+
+<button class="btn" onclick="sendOTP()">OTP BHEJO</button>
+
+<input
+ id="otp"
+ type="number"
+ placeholder="OTP"
+>
+
+<button class="btn" onclick="verifyOTP()">VERIFY</button>
+
+<p id="loginStatus"></p>
+
+</div>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:Arial}body{background:#FFF8F0}
-.loader{position:fixed;top:0;left:0;width:100%;height:100%;background:#FF6600;display:flex;justify-content:center;align-items:center;z-index:999;animation:fadeOut 2s 2s forwards;color:white;text-align:center;font-weight:900;font-size:20px}
-@keyframes fadeOut{100%{opacity:0;visibility:hidden}}
-.header{position:sticky;top:0;background:#FF6600;color:white;padding:12px;text-align:center;z-index:99;display:flex;justify-content:space-between;align-items:center}
-.dark{background:#111;color:white}.dark .card{background:#222}
-.timer{background:red;color:white;text-align:center;padding:5px;font-weight:bold}
-.banner{height:160px;background:url('https://via.placeholder.com/400x160/FF6600/fff?text=DIWALI+OFFER') center/cover;border-radius:12px;margin:10px}
-.search{width:90%;margin:10px 5%;padding:12px;border-radius:20px;border:1px solid #ccc}
-.categories{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:10px}
-.cat{text-align:center;background:white;padding:10px;border-radius:10px;box-shadow:0 2px 5px #0001;font-size:12px;font-weight:bold}
-.section-title{padding:10px;color:#FF6600;font-weight:bold;font-size:18px}
-.product-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:10px}
-.card{background:white;border-radius:12px;padding:8px;box-shadow:0 2px 8px #0001}
-.card img{width:100%;height:140px;object-fit:cover;border-radius:8px}
-.btn{background:#FF6600;color:white;border:none;padding:10px;border-radius:8px;width:100%;font-weight:bold;margin-top:5px}
-.affiliate{background:#FFEFD5;border:2px dashed #FF6600}
-.fab{position:fixed;bottom:20px;right:20px;background:#25D366;color:white;border-radius:50%;width:55px;height:55px;font-size:28px;border:none;z-index:99}
-#loginBox,#cartBox{display:none;padding:20px;background:white;margin:10px;border-radius:10px}
-input{width:90%;padding:10px;margin:8px 5%;border-radius:8px;border:1px solid #ccc}
-</style>
-</head>
-<body>
-<div class="loader">THE VAISHNAV'S<br>DIGITAL MALL<br><small>PURE VEG<br>JAI SHREE PASHUPATINATH 🚩</small></div>
 
-<div class="header">
-  <h2>VAISHNAV MALL</h2>
-  <button onclick="document.body.classList.toggle('dark')">🌙</button>
-</div>
-
-<button class="btn" style="width:45%;margin:10px" onclick="loginBox.style.display='block'">LOGIN</button>
-<button class="btn" style="width:45%;margin:10px" onclick="cartBox.style.display='block'">🛒 CART (<span id="cartCount">0</span>)</button>
-
-<div id="loginBox">
-  <h3>Mobile OTP Login</h3>
-  <input id="phone" placeholder="+91 9876543210">
-  <div id="recaptcha"></div>
-  <button class="btn" onclick="sendOTP()">OTP BHEJO</button>
-  <input id="otp" placeholder="OTP Daalo">
-  <button class="btn" onclick="verifyOTP()">VERIFY</button>
-</div>
-
-<div class="timer">FLASH SALE ENDS IN: <span id="timer">02:59:59</span></div>
-<div class="banner" id="mainBanner"></div>
-<input id="search" class="search" placeholder="Search Product..." onkeyup="searchProducts()">
-
-<h3 class="section-title">8 CATEGORIES</h3>
-<div class="categories">
-  <div class="cat">Hotel & Food</div><div class="cat">Grocery</div><div class="cat">Fashion</div><div class="cat">Education</div>
-  <div class="cat">Jewellery</div><div class="cat">Property</div><div class="cat">Mobile & AC</div><div class="cat">Amazon</div>
-</div>
-
-<h3 class="section-title">LOCAL PRODUCTS 🔥</h3>
-<div class="product-grid" id="localProducts"></div>
-
-<h3 class="section-title">AMAZON DEALS 🛒</h3>
-<div class="product-grid" id="affiliateProducts"></div>
-
-<div id="cartBox">
-  <h3>Your Cart</h3><div id="cartItems"></div><h3>Total: ₹<span id="cartTotal">0</span></h3>
-  <button class="btn" onclick="placeOrder()">ORDER KARO</button>
-</div>
-
-<button class="fab" onclick="window.open('https://wa.me/919827896129')">💬</button>
 <script src="app.js"></script>
+
 </body>
 </html>
