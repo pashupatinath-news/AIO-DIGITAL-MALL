@@ -1,450 +1,99 @@
-// ======================================================
-// AIO DIGITAL MALL
-// CUSTOMER APP + WEBSITE
-// ======================================================
+import {
+  initializeApp
+} from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyAyH9RRJTEETFh4zHWwCMO4d6qMielJQFA",
-  authDomain: "aio-digital-mall.firebaseapp.com",
-  projectId: "aio-digital-mall",
-  storageBucket: "aio-digital-mall.firebasestorage.app",
-  messagingSenderId: "501384049673",
-  appId: "1:501384049673:web:968bd8311cc700f82874d8",
-  measurementId: "G-TNDT9FYNRP"
-};
+import {
+  getAuth,
+  RecaptchaVerifier,
+  signInWithPhoneNumber,
+  onAuthStateChanged,
+  signOut
+} from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
 
-if (!firebase.apps.length) {
-  firebase.initializeApp(firebaseConfig);
-}
+import {
+  getFirestore,
+  collection,
+  query,
+  where,
+  onSnapshot,
+  getDocs,
+  addDoc,
+  doc,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
 
-const auth = firebase.auth();
-const db = firebase.firestore();
+import {
+  firebaseConfig
+} from "./firebaseConfig.js";
+
+
+const app = initializeApp(firebaseConfig);
+
+const auth = getAuth(app);
+
+const db = getFirestore(app);
 
 const $ = id => document.getElementById(id);
 
-let confirmationResult = null;
-let recaptchaVerifier = null;
-let cart = JSON.parse(localStorage.getItem("aio_cart") || "[]");
-let allLocalProducts = [];
-let timerSeconds = 10799;
 
-// ======================================================
-// SECURITY HELPERS
-// ======================================================
+let cart =
+  JSON.parse(
+    localStorage.getItem("aio_cart") || "[]"
+  );
+
+let confirmationResult = null;
+
+let recaptchaVerifier = null;
+
+let productUnsubscribe = null;
+
+let affiliateUnsubscribe = null;
+
+let bannerUnsubscribe = null;
+
 
 function escapeHTML(value) {
+
   return String(value ?? "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+
 }
 
-// ======================================================
-// LOGIN
-// ======================================================
 
-function openLogin() {
-  $("loginModal").style.display = "flex";
+function money(value) {
+
+  return "₹" +
+    Number(value || 0)
+      .toLocaleString("en-IN");
+
 }
 
-function closeLogin() {
-  $("loginModal").style.display = "none";
-}
 
-function setupRecaptcha() {
+function toast(message) {
 
-  if (!$("recaptcha")) return;
-  if (recaptchaVerifier) return;
+  const element = $("toast");
 
-  recaptchaVerifier =
-    new firebase.auth.RecaptchaVerifier(
-      "recaptcha",
-      {
-        size: "invisible"
-      }
-    );
-
-  recaptchaVerifier.render();
-}
-
-async function sendOTP() {
-
-  try {
-
-    setupRecaptcha();
-
-    const phone = $("phone").value.trim();
-
-    if (!phone) {
-      alert("Mobile number daalo");
-      return;
-    }
-
-    if (!phone.startsWith("+")) {
-      alert("Country code ke saath number daalo");
-      return;
-    }
-
-    confirmationResult =
-      await auth.signInWithPhoneNumber(
-        phone,
-        recaptchaVerifier
-      );
-
-    alert("OTP Bhej diya ✅");
-
-  } catch (error) {
-
-    console.error(error);
-
-    alert(
-      "OTP error:\n" +
-      error.message
-    );
-
-    if (recaptchaVerifier) {
-      try {
-        recaptchaVerifier.clear();
-      } catch (_) {}
-
-      recaptchaVerifier = null;
-    }
-  }
-}
-
-async function verifyOTP() {
-
-  try {
-
-    const otp = $("otp").value.trim();
-
-    if (!confirmationResult) {
-      alert("Pehle OTP bhejo");
-      return;
-    }
-
-    if (!otp) {
-      alert("OTP daalo");
-      return;
-    }
-
-    const result =
-      await confirmationResult.confirm(otp);
-
-    alert(
-      "Login Ho Gaya ✅\n" +
-      (result.user.phoneNumber || "")
-    );
-
-    closeLogin();
-
-  } catch (error) {
-
-    console.error(error);
-    alert("Galat OTP ❌");
-
-  }
-}
-
-auth.onAuthStateChanged(user => {
-
-  if (user) {
-
-    console.log(
-      "Customer logged in:",
-      user.phoneNumber || user.uid
-    );
-
-  } else {
-
-    console.log("Customer not logged in");
-
-  }
-
-});
-
-// ======================================================
-// PRODUCTS
-// ======================================================
-
-function productImage(p) {
-
-  return (
-    p.photo ||
-    p.image ||
-    "https://via.placeholder.com/500x400?text=Product"
-  );
-}
-
-function renderLocalProducts(products) {
-
-  const container = $("localProducts");
-
-  if (!container) return;
-
-  if (!products.length) {
-
-    container.innerHTML =
-      "<p>Product nahi mila.</p>";
-
+  if (!element) {
+    alert(message);
     return;
   }
 
-  container.innerHTML =
-    products.map(item => {
+  element.textContent = message;
 
-      const p = item.data;
-      const id = item.id;
+  element.classList.add("show");
 
-      const name =
-        p.name || "Product";
+  setTimeout(() => {
 
-      const price =
-        Number(p.price || 0);
+    element.classList.remove("show");
 
-      const stock =
-        Number(
-          p.stock === undefined
-            ? 1
-            : p.stock
-        );
+  }, 2200);
 
-      return `
-        <div class="card">
-
-          <img
-            src="${escapeHTML(productImage(p))}"
-            alt="${escapeHTML(name)}"
-          >
-
-          <h3>${escapeHTML(name)}</h3>
-
-          <div class="price">
-            ₹${price}
-          </div>
-
-          <div class="stock">
-            ${stock > 0
-              ? "Stock Available"
-              : "OUT OF STOCK"}
-          </div>
-
-          ${
-            stock > 0
-            ?
-            `
-            <button
-              class="btn"
-              onclick="addCart(
-                '${id}',
-                ${JSON.stringify(name)},
-                ${price}
-              )"
-            >
-              ADD TO CART
-            </button>
-            `
-            :
-            `
-            <button disabled>
-              OUT OF STOCK
-            </button>
-            `
-          }
-
-        </div>
-      `;
-
-    }).join("");
 }
 
-function loadLocalProducts() {
-
-  db.collection("products")
-    .where("type", "==", "local")
-    .onSnapshot(
-
-      snapshot => {
-
-        allLocalProducts =
-          snapshot.docs.map(doc => ({
-            id: doc.id,
-            data: doc.data()
-          }));
-
-        renderLocalProducts(
-          allLocalProducts
-        );
-
-      },
-
-      error => {
-
-        console.error(
-          "Products error:",
-          error
-        );
-
-        $("localProducts").innerHTML =
-          "<p>Products load nahi ho paaye.</p>";
-
-      }
-
-    );
-}
-
-function loadAffiliateProducts() {
-
-  db.collection("products")
-    .where("type", "==", "affiliate")
-    .onSnapshot(
-
-      snapshot => {
-
-        const container =
-          $("affiliateProducts");
-
-        if (!container) return;
-
-        if (snapshot.empty) {
-
-          container.innerHTML =
-            "<p>Amazon deals available nahi hain.</p>";
-
-          return;
-        }
-
-        container.innerHTML =
-          snapshot.docs.map(doc => {
-
-            const p = doc.data();
-
-            const name =
-              p.name || "Amazon Product";
-
-            const price =
-              Number(p.price || 0);
-
-            const link =
-              p.link || "#";
-
-            return `
-              <div class="card">
-
-                <img
-                  src="${escapeHTML(productImage(p))}"
-                  alt="${escapeHTML(name)}"
-                >
-
-                <h3>
-                  ${escapeHTML(name)}
-                </h3>
-
-                <div class="price">
-                  ₹${price}
-                </div>
-
-                <button
-                  class="btn"
-                  onclick="window.open(
-                    ${JSON.stringify(link)},
-                    '_blank',
-                    'noopener'
-                  )"
-                >
-                  BUY ON AMAZON
-                </button>
-
-              </div>
-            `;
-
-          }).join("");
-
-      },
-
-      error => {
-
-        console.error(
-          "Affiliate error:",
-          error
-        );
-
-      }
-
-    );
-}
-
-// ======================================================
-// CATEGORY
-// ======================================================
-
-function filterCategory(category) {
-
-  const filtered =
-    allLocalProducts.filter(item => {
-
-      const p = item.data;
-
-      return String(
-        p.category || ""
-      ).toLowerCase() ===
-      category.toLowerCase();
-
-    });
-
-  renderLocalProducts(filtered);
-
-  window.scrollTo({
-    top: $("localProducts").offsetTop - 70,
-    behavior: "smooth"
-  });
-}
-
-// ======================================================
-// SEARCH
-// ======================================================
-
-function searchProducts() {
-
-  const value =
-    $("search").value
-      .trim()
-      .toLowerCase();
-
-  if (!value) {
-
-    renderLocalProducts(
-      allLocalProducts
-    );
-
-    return;
-  }
-
-  const filtered =
-    allLocalProducts.filter(item => {
-
-      const p = item.data;
-
-      return (
-        String(p.name || "")
-          .toLowerCase()
-          .includes(value)
-        ||
-        String(p.category || "")
-          .toLowerCase()
-          .includes(value)
-      );
-
-    });
-
-  renderLocalProducts(filtered);
-}
-
-// ======================================================
-// CART
-// ======================================================
 
 function saveCart() {
 
@@ -453,118 +102,602 @@ function saveCart() {
     JSON.stringify(cart)
   );
 
-}
-
-function addCart(id, name, price) {
-
-  cart.push({
-    id,
-    name,
-    price: Number(price)
-  });
-
-  saveCart();
   updateCartUI();
 
-  alert(
-    name +
-    " Cart me add ho gaya ✅"
-  );
 }
 
-function removeCart(index) {
-
-  cart.splice(index, 1);
-
-  saveCart();
-  updateCartUI();
-}
-
-function toggleCart() {
-
-  $("cartBox").scrollIntoView({
-    behavior: "smooth"
-  });
-
-}
 
 function updateCartUI() {
 
-  const count = $("cartCount");
-  const total = $("cartTotal");
-  const items = $("cartItems");
+  if ($("cartCount")) {
 
-  if (count) {
-
-    count.innerText =
+    $("cartCount").textContent =
       cart.length;
 
   }
 
-  if (total) {
+  if ($("cartTotal")) {
 
-    total.innerText =
+    const total =
       cart.reduce(
         (sum, item) =>
           sum + Number(item.price || 0),
         0
       );
 
+    $("cartTotal").textContent =
+      total.toLocaleString("en-IN");
+
   }
 
-  if (!items) return;
+  if ($("cartItems")) {
 
-  if (!cart.length) {
+    if (!cart.length) {
 
-    items.innerHTML =
-      "<p>Cart khali hai.</p>";
+      $("cartItems").innerHTML =
+        "<p>Cart khali hai.</p>";
+
+      return;
+
+    }
+
+    $("cartItems").innerHTML =
+      cart.map((item, index) => {
+
+        return `
+          <div class="cart-row">
+
+            <span>
+              ${escapeHTML(item.name)}
+
+              <small>
+                ${money(item.price)}
+              </small>
+            </span>
+
+            <button
+              class="danger"
+              data-remove="${index}">
+              ×
+            </button>
+
+          </div>
+        `;
+
+      }).join("");
+
+  }
+
+}
+
+
+function addCart(id, name, price) {
+
+  cart.push({
+
+    id: id,
+
+    name: name,
+
+    price: Number(price || 0)
+
+  });
+
+  saveCart();
+
+  toast(
+    name +
+    " cart me add ho gaya ✅"
+  );
+
+  toggleCart(true);
+
+}
+
+window.addCart = addCart;
+
+
+function removeCart(index) {
+
+  cart.splice(index, 1);
+
+  saveCart();
+
+}
+
+window.removeCart = removeCart;
+
+
+function toggleCart(force) {
+
+  const box = $("cartBox");
+
+  if (!box) return;
+
+  if (force === undefined) {
+
+    box.classList.toggle("hidden");
 
     return;
+
   }
 
-  items.innerHTML =
-    cart.map((item, index) => {
+  box.classList.toggle(
+    "hidden",
+    !force
+  );
+
+}
+
+window.toggleCart = toggleCart;
+
+
+async function setupRecaptcha() {
+
+  if (!$("recaptcha")) return;
+
+  if (recaptchaVerifier) return;
+
+  recaptchaVerifier =
+    new RecaptchaVerifier(
+      auth,
+      "recaptcha",
+      {
+        size: "invisible"
+      }
+    );
+
+  await recaptchaVerifier.render();
+
+}
+
+
+async function sendOTP() {
+
+  const phone =
+    $("phone")?.value.trim();
+
+  if (!phone) {
+
+    toast(
+      "Mobile number daalo."
+    );
+
+    return;
+
+  }
+
+  if (!phone.startsWith("+")) {
+
+    toast(
+      "Country code ke saath number daalo.\nExample: +919876543210"
+    );
+
+    return;
+
+  }
+
+  try {
+
+    await setupRecaptcha();
+
+    confirmationResult =
+      await signInWithPhoneNumber(
+        auth,
+        phone,
+        recaptchaVerifier
+      );
+
+    toast(
+      "OTP bhej diya ✅"
+    );
+
+  } catch (error) {
+
+    console.error(error);
+
+    toast(
+      "OTP error: " +
+      error.message
+    );
+
+  }
+
+}
+
+window.sendOTP = sendOTP;
+
+
+async function verifyOTP() {
+
+  const otp =
+    $("otp")?.value.trim();
+
+  if (!confirmationResult) {
+
+    toast(
+      "Pehle OTP bhejo."
+    );
+
+    return;
+
+  }
+
+  if (!otp) {
+
+    toast(
+      "OTP daalo."
+    );
+
+    return;
+
+  }
+
+  try {
+
+    await confirmationResult.confirm(
+      otp
+    );
+
+    $("loginBox")
+      ?.classList.add("hidden");
+
+    toast(
+      "Login ho gaya ✅"
+    );
+
+  } catch (error) {
+
+    console.error(error);
+
+    toast(
+      "Galat OTP ❌"
+    );
+
+  }
+
+}
+
+window.verifyOTP = verifyOTP;
+
+
+function renderProducts(
+  documents,
+  containerId,
+  affiliate = false
+) {
+
+  const container =
+    $(containerId);
+
+  if (!container) return;
+
+  if (!documents.length) {
+
+    container.innerHTML =
+      "<p>Abhi products available nahi hain.</p>";
+
+    return;
+
+  }
+
+  container.innerHTML =
+    documents.map(document => {
+
+      const data =
+        document.data();
+
+      const name =
+        data.name ||
+        "Product";
+
+      const price =
+        Number(data.price || 0);
+
+      const image =
+        data.photo ||
+        data.image ||
+        "https://via.placeholder.com/600x400?text=Product";
+
+      if (affiliate) {
+
+        const link =
+          data.link || "#";
+
+        return `
+          <article class="card">
+
+            <img
+              src="${escapeHTML(image)}"
+              alt="${escapeHTML(name)}">
+
+            <div class="card-body">
+
+              <h3>
+                ${escapeHTML(name)}
+              </h3>
+
+              <b>
+                ${money(price)}
+              </b>
+
+              <button
+                class="primary"
+                data-buy="${escapeHTML(link)}">
+                BUY ON AMAZON
+              </button>
+
+            </div>
+
+          </article>
+        `;
+
+      }
+
+      const stock =
+        Number(
+          data.stock ?? 1
+        );
 
       return `
-        <div style="
-          display:flex;
-          justify-content:space-between;
-          align-items:center;
-          gap:10px;
-          padding:10px 0;
-          border-bottom:1px solid #ddd;
-        ">
+        <article class="card">
 
-          <span>
-            ${escapeHTML(item.name)}
-            - ₹${Number(item.price)}
-          </span>
+          <img
+            src="${escapeHTML(image)}"
+            alt="${escapeHTML(name)}">
 
-          <button
-            onclick="removeCart(${index})"
-            style="
-              background:red;
-              color:white;
-            "
-          >
-            X
-          </button>
+          <div class="card-body">
 
-        </div>
+            <h3>
+              ${escapeHTML(name)}
+            </h3>
+
+            <b>
+              ${money(price)}
+            </b>
+
+            ${
+              stock <= 0
+
+              ? `
+                <button
+                  disabled
+                  style="width:100%;margin-top:12px">
+                  OUT OF STOCK
+                </button>
+              `
+
+              : `
+                <button
+                  class="primary"
+                  data-add="${escapeHTML(document.id)}"
+                  data-name="${escapeHTML(name)}"
+                  data-price="${price}">
+                  ADD TO CART
+                </button>
+              `
+            }
+
+          </div>
+
+        </article>
       `;
 
     }).join("");
+
 }
 
-// ======================================================
-// COD ORDER
-// ======================================================
+
+function loadLocalProducts() {
+
+  if (productUnsubscribe) {
+
+    productUnsubscribe();
+
+  }
+
+  const q =
+    query(
+      collection(db, "products"),
+      where("type", "==", "local")
+    );
+
+  productUnsubscribe =
+    onSnapshot(
+      q,
+      snapshot => {
+
+        renderProducts(
+          snapshot.docs,
+          "localProducts"
+        );
+
+      },
+      error => {
+
+        console.error(
+          "Local products:",
+          error
+        );
+
+      }
+    );
+
+}
+
+
+function loadAffiliateProducts() {
+
+  if (affiliateUnsubscribe) {
+
+    affiliateUnsubscribe();
+
+  }
+
+  const q =
+    query(
+      collection(db, "products"),
+      where("type", "==", "affiliate")
+    );
+
+  affiliateUnsubscribe =
+    onSnapshot(
+      q,
+      snapshot => {
+
+        renderProducts(
+          snapshot.docs,
+          "affiliateProducts",
+          true
+        );
+
+      },
+      error => {
+
+        console.error(
+          "Affiliate products:",
+          error
+        );
+
+      }
+    );
+
+}
+
+
+function loadMainBanner() {
+
+  if (!$("mainBanner")) return;
+
+  bannerUnsubscribe =
+    onSnapshot(
+      doc(
+        db,
+        "banner",
+        "main"
+      ),
+      snapshot => {
+
+        if (!snapshot.exists()) return;
+
+        const data =
+          snapshot.data();
+
+        if (data.url) {
+
+          $("mainBanner")
+            .style
+            .backgroundImage =
+            `url("${data.url}")`;
+
+        }
+
+      },
+      error => {
+
+        console.error(
+          "Banner:",
+          error
+        );
+
+      }
+    );
+
+}
+
+
+let searchTimer = null;
+
+
+function searchProducts() {
+
+  clearTimeout(
+    searchTimer
+  );
+
+  searchTimer =
+    setTimeout(
+      async () => {
+
+        const value =
+          $("search")
+            ?.value
+            .trim()
+            .toLowerCase();
+
+        if (!value) {
+
+          loadLocalProducts();
+
+          return;
+
+        }
+
+        try {
+
+          const snapshot =
+            await getDocs(
+              query(
+                collection(
+                  db,
+                  "products"
+                ),
+                where(
+                  "type",
+                  "==",
+                  "local"
+                )
+              )
+            );
+
+          const filtered =
+            snapshot.docs.filter(
+              document => {
+
+                const name =
+                  String(
+                    document.data().name ||
+                    ""
+                  ).toLowerCase();
+
+                return name.includes(
+                  value
+                );
+
+              }
+            );
+
+          renderProducts(
+            filtered,
+            "localProducts"
+          );
+
+        } catch (error) {
+
+          console.error(
+            error
+          );
+
+        }
+
+      },
+      300
+    );
+
+}
+
+window.searchProducts =
+  searchProducts;
+
 
 async function placeOrder() {
 
   if (!cart.length) {
 
-    alert("Cart khali hai ❌");
+    toast(
+      "Cart khali hai ❌"
+    );
+
     return;
 
   }
@@ -574,100 +707,104 @@ async function placeOrder() {
 
   if (!user) {
 
-    alert(
-      "Order place karne ke liye pehle login karo."
+    $("loginBox")
+      ?.classList.remove("hidden");
+
+    toast(
+      "Pehle OTP login karo."
     );
 
-    openLogin();
-    return;
-
-  }
-
-  const phone =
-    prompt(
-      "Delivery mobile number daalo",
-      user.phoneNumber || ""
-    );
-
-  if (!phone) {
-
-    alert("Mobile number required hai");
     return;
 
   }
 
   const address =
-    prompt(
-      "Complete delivery address daalo"
-    );
+    $("address")
+      ?.value
+      .trim();
 
   if (!address) {
 
-    alert("Address required hai");
+    toast(
+      "Delivery address daalo."
+    );
+
     return;
 
   }
+
+  const total =
+    cart.reduce(
+      (sum, item) =>
+        sum +
+        Number(item.price || 0),
+      0
+    );
 
   const deliveryOTP =
     String(
       Math.floor(
         1000 +
-        Math.random() * 9000
+        Math.random() *
+        9000
       )
-    );
-
-  const total =
-    cart.reduce(
-      (sum, item) =>
-        sum + Number(item.price || 0),
-      0
     );
 
   try {
 
     const orderData = {
 
-      customerId: user.uid,
+      userId:
+        user.uid,
 
-      customerPhone:
+      phone:
         user.phoneNumber || "",
 
-      phone,
+      address:
+        address,
 
-      address,
+      items:
+        cart,
 
-      items: cart,
+      total:
+        total,
 
-      total,
+      paymentMethod:
+        "COD",
 
-      paymentMethod: "COD",
+      status:
+        "NEW",
 
-      status: "NEW",
-
-      deliveryOTP,
+      deliveryOTP:
+        deliveryOTP,
 
       createdAt:
-        firebase.firestore
-          .FieldValue
-          .serverTimestamp()
+        serverTimestamp()
 
     };
 
-    const ref =
-      await db
-        .collection("orders")
-        .add(orderData);
+    const orderRef =
+      await addDoc(
+        collection(
+          db,
+          "orders"
+        ),
+        orderData
+      );
 
     cart = [];
 
     saveCart();
-    updateCartUI();
+
+    $("address").value = "";
+
+    toggleCart(false);
 
     alert(
-      "ORDER SUCCESSFULLY PLACE HO GAYA ✅\n\n" +
+      "Order Successfully Place Ho Gaya ✅\n\n" +
       "Payment: CASH ON DELIVERY\n\n" +
       "Order ID: " +
-      ref.id +
+      orderRef.id +
       "\n\n" +
       "Delivery OTP: " +
       deliveryOTP
@@ -675,119 +812,246 @@ async function placeOrder() {
 
   } catch (error) {
 
-    console.error(error);
+    console.error(
+      "Order:",
+      error
+    );
 
-    alert(
+    toast(
       "Order place nahi hua ❌\n" +
       error.message
     );
 
   }
+
 }
 
-// ======================================================
-// BANNER
-// ======================================================
+window.placeOrder =
+  placeOrder;
 
-function loadMainBanner() {
+window.placeCODOrder =
+  placeOrder;
 
-  const banner =
-    $("mainBanner");
 
-  if (!banner) return;
+onAuthStateChanged(
+  auth,
+  user => {
 
-  db.collection("banner")
-    .doc("main")
-    .onSnapshot(
+    if (user) {
 
-      doc => {
+      if ($("loginStatus")) {
 
-        if (!doc.exists) return;
-
-        const data =
-          doc.data();
-
-        if (data.url) {
-
-          banner.style.backgroundImage =
-            `url("${data.url}")`;
-
-        }
-
-      },
-
-      error => {
-
-        console.error(
-          "Banner error:",
-          error
-        );
+        $("loginStatus")
+          .textContent =
+          "Logged in";
 
       }
 
-    );
-}
+      $("logoutBtn")
+        ?.classList.remove(
+          "hidden"
+        );
 
-// ======================================================
-// TIMER
-// ======================================================
+    } else {
 
-setInterval(() => {
+      if ($("loginStatus")) {
 
-  if (timerSeconds <= 0) {
+        $("loginStatus")
+          .textContent =
+          "Guest";
 
-    timerSeconds = 10799;
+      }
 
-  }
+      $("logoutBtn")
+        ?.classList.add(
+          "hidden"
+        );
 
-  timerSeconds--;
-
-  const h =
-    Math.floor(
-      timerSeconds / 3600
-    );
-
-  const m =
-    Math.floor(
-      (timerSeconds % 3600) / 60
-    );
-
-  const s =
-    timerSeconds % 60;
-
-  if ($("timer")) {
-
-    $("timer").innerText =
-      String(h).padStart(2, "0") +
-      ":" +
-      String(m).padStart(2, "0") +
-      ":" +
-      String(s).padStart(2, "0");
+    }
 
   }
+);
 
-}, 1000);
 
-// ======================================================
-// START
-// ======================================================
+document.addEventListener(
+  "click",
+  event => {
+
+    const addButton =
+      event.target.closest(
+        "[data-add]"
+      );
+
+    if (addButton) {
+
+      addCart(
+        addButton.dataset.add,
+        addButton.dataset.name,
+        addButton.dataset.price
+      );
+
+      return;
+
+    }
+
+
+    const removeButton =
+      event.target.closest(
+        "[data-remove]"
+      );
+
+    if (removeButton) {
+
+      removeCart(
+        Number(
+          removeButton.dataset.remove
+        )
+      );
+
+      return;
+
+    }
+
+
+    const buyButton =
+      event.target.closest(
+        "[data-buy]"
+      );
+
+    if (
+      buyButton &&
+      buyButton.dataset.buy !== "#"
+    ) {
+
+      window.open(
+        buyButton.dataset.buy,
+        "_blank",
+        "noopener,noreferrer"
+      );
+
+      return;
+
+    }
+
+
+    if (
+      event.target.closest(
+        "[data-cart]"
+      )
+    ) {
+
+      toggleCart();
+
+      return;
+
+    }
+
+
+    if (
+      event.target.closest(
+        "[data-login]"
+      )
+    ) {
+
+      $("loginBox")
+        ?.classList.remove(
+          "hidden"
+        );
+
+      return;
+
+    }
+
+
+    if (
+      event.target.closest(
+        "[data-close-login]"
+      )
+    ) {
+
+      $("loginBox")
+        ?.classList.add(
+          "hidden"
+        );
+
+    }
+
+  }
+);
+
+
+$("logoutBtn")
+  ?.addEventListener(
+    "click",
+    async () => {
+
+      await signOut(auth);
+
+    }
+  );
+
 
 document.addEventListener(
   "DOMContentLoaded",
   () => {
 
     updateCartUI();
-    setupRecaptcha();
+
     loadLocalProducts();
+
     loadAffiliateProducts();
+
     loadMainBanner();
+
+    setupRecaptcha()
+      .catch(console.error);
+
+
+    let time = 10800;
+
+    setInterval(
+      () => {
+
+        time--;
+
+        if (time <= 0) {
+
+          time = 10800;
+
+        }
+
+        if ($("timer")) {
+
+          const h =
+            Math.floor(
+              time / 3600
+            );
+
+          const m =
+            Math.floor(
+              (time % 3600) / 60
+            );
+
+          const s =
+            time % 60;
+
+          $("timer")
+            .textContent =
+            String(h).padStart(2, "0") +
+            ":" +
+            String(m).padStart(2, "0") +
+            ":" +
+            String(s).padStart(2, "0");
+
+        }
+
+      },
+      1000
+    );
 
   }
 );
 
-// ======================================================
-// SERVICE WORKER
-// ======================================================
 
 if ("serviceWorker" in navigator) {
 
