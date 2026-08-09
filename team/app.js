@@ -1,985 +1,66 @@
-// ======================================================
-// AIO DIGITAL MALL - TEAM APP
-// ======================================================
+import {
+  initializeApp
+} from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
 
-const firebaseConfig = {
+import {
+  getAuth,
+  RecaptchaVerifier,
+  signInWithPhoneNumber,
+  onAuthStateChanged,
+  signOut
+} from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
 
-  apiKey:
-    "AIzaSyAyH9RRJTEETFh4zHWwCMO4d6qMielJQFA",
+import {
+  getFirestore,
+  collection,
+  query,
+  orderBy,
+  onSnapshot,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  getDoc,
+  setDoc,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
 
-  authDomain:
-    "aio-digital-mall.firebaseapp.com",
+import {
+  getStorage,
+  ref,
+  uploadBytes,
+  getDownloadURL
+} from "https://www.gstatic.com/firebasejs/12.17.1/firebase-storage.js";
 
-  projectId:
-    "aio-digital-mall",
+import {
+  firebaseConfig
+} from "./firebaseConfig.js";
 
-  storageBucket:
-    "aio-digital-mall.firebasestorage.app",
 
-  messagingSenderId:
-    "501384049673",
+const app =
+  initializeApp(firebaseConfig);
 
-  appId:
-    "1:501384049673:web:968bd8311cc700f82874d8",
+const auth =
+  getAuth(app);
 
-  measurementId:
-    "G-TNDT9FYNRP"
+const db =
+  getFirestore(app);
 
-};
+const storage =
+  getStorage(app);
 
-if (!firebase.apps.length) {
-  firebase.initializeApp(firebaseConfig);
-}
+const $ =
+  id => document.getElementById(id);
 
-const auth = firebase.auth();
-const db = firebase.firestore();
 
-const $ = id =>
-  document.getElementById(id);
+let confirmationResult = null;
 
-let teamConfirmation = null;
-let teamRecaptcha = null;
+let recaptchaVerifier = null;
 
-// ======================================================
-// TEAM OTP LOGIN
-// ======================================================
+let currentUser = null;
 
-function setupTeamRecaptcha() {
+let listenersStarted = false;
 
-  if (!$("recaptcha")) return;
-  if (teamRecaptcha) return;
-
-  teamRecaptcha =
-    new firebase.auth.RecaptchaVerifier(
-      "recaptcha",
-      {
-        size:"invisible"
-      }
-    );
-
-  teamRecaptcha.render();
-}
-
-async function sendTeamOTP() {
-
-  try {
-
-    setupTeamRecaptcha();
-
-    const phone =
-      $("phone").value.trim();
-
-    if (!phone) {
-      alert("Mobile number daalo");
-      return;
-    }
-
-    teamConfirmation =
-      await auth.signInWithPhoneNumber(
-        phone,
-        teamRecaptcha
-      );
-
-    alert("Team OTP bhej diya ✅");
-
-  } catch(error) {
-
-    console.error(error);
-
-    alert(error.message);
-
-  }
-}
-
-async function verifyTeamOTP() {
-
-  try {
-
-    const otp =
-      $("otp").value.trim();
-
-    if (!teamConfirmation) {
-
-      alert("Pehle OTP bhejo");
-      return;
-
-    }
-
-    const result =
-      await teamConfirmation.confirm(otp);
-
-    const uid =
-      result.user.uid;
-
-    const roleDoc =
-      await db
-        .collection("teamUsers")
-        .doc(uid)
-        .get();
-
-    if (!roleDoc.exists) {
-
-      await auth.signOut();
-
-      alert(
-        "Aap Team Member ke roop mein authorized nahi ho."
-      );
-
-      return;
-
-    }
-
-    const role =
-      roleDoc.data().role;
-
-    if (!role) {
-
-      await auth.signOut();
-
-      alert("Team role missing hai.");
-      return;
-
-    }
-
-    location.href =
-      "dashboard.html";
-
-  } catch(error) {
-
-    console.error(error);
-
-    alert(
-      "Team login failed:\n" +
-      error.message
-    );
-
-  }
-}
-
-// ======================================================
-// TEAM AUTH
-// ======================================================
-
-async function requireTeam() {
-
-  return new Promise(resolve => {
-
-    auth.onAuthStateChanged(
-      async user => {
-
-        if (!user) {
-
-          if (
-            !location.pathname.endsWith(
-              "/index.html"
-            )
-          ) {
-            location.href =
-              "index.html";
-          }
-
-          resolve(false);
-          return;
-
-        }
-
-        const doc =
-          await db
-            .collection("teamUsers")
-            .doc(user.uid)
-            .get();
-
-        if (!doc.exists) {
-
-          await auth.signOut();
-
-          location.href =
-            "index.html";
-
-          resolve(false);
-          return;
-
-        }
-
-        resolve(true);
-
-      }
-    );
-
-  });
-
-}
-
-function logoutTeam() {
-
-  auth.signOut()
-    .then(() => {
-
-      location.href =
-        "index.html";
-
-    });
-
-}
-
-// ======================================================
-// DASHBOARD STATS
-// ======================================================
-
-async function loadDashboardStats() {
-
-  try {
-
-    const orders =
-      await db
-        .collection("orders")
-        .get();
-
-    const products =
-      await db
-        .collection("products")
-        .get();
-
-    const shops =
-      await db
-        .collection("shops")
-        .get();
-
-    if ($("ordersCount"))
-      $("ordersCount").innerText =
-        orders.size;
-
-    if ($("newOrdersCount"))
-      $("newOrdersCount").innerText =
-        orders.docs.filter(
-          d => d.data().status === "NEW"
-        ).length;
-
-    if ($("productsCount"))
-      $("productsCount").innerText =
-        products.size;
-
-    if ($("shopsCount"))
-      $("shopsCount").innerText =
-        shops.size;
-
-  } catch(error) {
-
-    console.error(error);
-
-  }
-
-}
-
-// ======================================================
-// SAVE SHOP
-// ======================================================
-
-async function saveShop() {
-
-  const name =
-    $("shopName").value.trim();
-
-  if (!name) {
-
-    alert("Shop name required");
-    return;
-
-  }
-
-  try {
-
-    await db.collection("shops").add({
-
-      name,
-
-      category:
-        $("shopCategory").value,
-
-      phone:
-        $("shopPhone").value.trim(),
-
-      address:
-        $("shopAddress").value.trim(),
-
-      createdBy:
-        auth.currentUser.uid,
-
-      createdAt:
-        firebase.firestore
-          .FieldValue
-          .serverTimestamp()
-
-    });
-
-    alert("Shop saved ✅");
-
-    $("shopName").value = "";
-    $("shopPhone").value = "";
-    $("shopAddress").value = "";
-
-    loadShops();
-
-  } catch(error) {
-
-    alert(
-      "Shop save error:\n" +
-      error.message
-    );
-
-  }
-
-}
-
-// ======================================================
-// LOCAL PRODUCT
-// ======================================================
-
-async function saveLocalProduct() {
-
-  const name =
-    $("pName").value.trim();
-
-  const price =
-    Number($("pPrice").value);
-
-  if (!name || price < 0) {
-
-    alert(
-      "Product name aur valid price daalo"
-    );
-
-    return;
-
-  }
-
-  try {
-
-    await db.collection("products").add({
-
-      name,
-
-      price,
-
-      photo:
-        $("pPhoto").value.trim(),
-
-      category:
-        $("pCategory").value,
-
-      stock:
-        Number($("pStock").value || 0),
-
-      shopId:
-        $("pShopId").value.trim(),
-
-      type:
-        "local",
-
-      createdBy:
-        auth.currentUser.uid,
-
-      createdAt:
-        firebase.firestore
-          .FieldValue
-          .serverTimestamp()
-
-    });
-
-    alert("Product saved ✅");
-
-    $("pName").value = "";
-    $("pPrice").value = "";
-    $("pPhoto").value = "";
-    $("pStock").value = "1";
-    $("pShopId").value = "";
-
-    loadProducts();
-
-  } catch(error) {
-
-    alert(
-      "Product save error:\n" +
-      error.message
-    );
-
-  }
-
-}
-
-// ======================================================
-// AFFILIATE PRODUCT
-// ======================================================
-
-async function saveAffiliateProduct() {
-
-  const name =
-    $("aName").value.trim();
-
-  const link =
-    $("aLink").value.trim();
-
-  if (!name || !link) {
-
-    alert(
-      "Product name aur Amazon link required hai"
-    );
-
-    return;
-
-  }
-
-  try {
-
-    await db.collection("products").add({
-
-      name,
-
-      price:
-        Number(
-          $("aPrice").value || 0
-        ),
-
-      photo:
-        $("aPhoto").value.trim(),
-
-      link,
-
-      type:
-        "affiliate",
-
-      createdBy:
-        auth.currentUser.uid,
-
-      createdAt:
-        firebase.firestore
-          .FieldValue
-          .serverTimestamp()
-
-    });
-
-    alert("Affiliate product saved ✅");
-
-    $("aName").value = "";
-    $("aPrice").value = "";
-    $("aPhoto").value = "";
-    $("aLink").value = "";
-
-    loadProducts();
-
-  } catch(error) {
-
-    alert(error.message);
-
-  }
-
-}
-
-// ======================================================
-// BANNER
-// ======================================================
-
-async function saveBanner() {
-
-  const url =
-    $("bannerUrl").value.trim();
-
-  if (!url) {
-
-    alert("Banner URL daalo");
-    return;
-
-  }
-
-  try {
-
-    await db
-      .collection("banner")
-      .doc("main")
-      .set({
-
-        url,
-
-        updatedBy:
-          auth.currentUser.uid,
-
-        updatedAt:
-          firebase.firestore
-            .FieldValue
-            .serverTimestamp()
-
-      });
-
-    alert("Banner updated ✅");
-
-  } catch(error) {
-
-    alert(error.message);
-
-  }
-
-}
-
-// ======================================================
-// ORDERS
-// ======================================================
-
-function loadOrders() {
-
-  const container =
-    $("ordersList") ||
-    $("dashboardOrders");
-
-  if (!container) return;
-
-  db.collection("orders")
-    .orderBy(
-      "createdAt",
-      "desc"
-    )
-    .onSnapshot(
-
-      snapshot => {
-
-        if (snapshot.empty) {
-
-          container.innerHTML =
-            "<p>No orders.</p>";
-
-          return;
-
-        }
-
-        container.innerHTML =
-          snapshot.docs.map(doc => {
-
-            const o =
-              doc.data();
-
-            return `
-              <div class="item">
-
-                <h3>
-                  Order #${doc.id}
-                </h3>
-
-                <p>
-                  <b>Customer:</b>
-                  ${escapeHTML(
-                    o.phone || ""
-                  )}
-                </p>
-
-                <p>
-                  <b>Address:</b>
-                  ${escapeHTML(
-                    o.address || ""
-                  )}
-                </p>
-
-                <p>
-                  <b>Total:</b>
-                  ₹${Number(
-                    o.total || 0
-                  )}
-                </p>
-
-                <p>
-                  <b>Payment:</b>
-                  ${o.paymentMethod || "COD"}
-                </p>
-
-                <p>
-                  <b>Status:</b>
-                  ${o.status || "NEW"}
-                </p>
-
-                <p>
-                  <b>Delivery OTP:</b>
-                  ${o.deliveryOTP || "----"}
-                </p>
-
-                <select
-                  onchange="updateOrderStatus(
-                    '${doc.id}',
-                    this.value
-                  )"
-                >
-
-                  <option
-                    ${o.status==="NEW"?"selected":""}
-                  >
-                    NEW
-                  </option>
-
-                  <option
-                    ${o.status==="CONFIRMED"?"selected":""}
-                  >
-                    CONFIRMED
-                  </option>
-
-                  <option
-                    ${o.status==="PACKED"?"selected":""}
-                  >
-                    PACKED
-                  </option>
-
-                  <option
-                    ${o.status==="OUT_FOR_DELIVERY"?"selected":""}
-                  >
-                    OUT_FOR_DELIVERY
-                  </option>
-
-                  <option
-                    ${o.status==="DELIVERED"?"selected":""}
-                  >
-                    DELIVERED
-                  </option>
-
-                  <option
-                    ${o.status==="CANCELLED"?"selected":""}
-                  >
-                    CANCELLED
-                  </option>
-
-                </select>
-
-              </div>
-            `;
-
-          }).join("");
-
-      },
-
-      error => {
-
-        console.error(
-          "Order load error:",
-          error
-        );
-
-        container.innerHTML =
-          "<p>Orders load nahi hue.</p>";
-
-      }
-
-    );
-
-}
-
-async function updateOrderStatus(
-  orderId,
-  status
-) {
-
-  try {
-
-    await db
-      .collection("orders")
-      .doc(orderId)
-      .update({
-
-        status,
-
-        updatedAt:
-          firebase.firestore
-            .FieldValue
-            .serverTimestamp(),
-
-        updatedBy:
-          auth.currentUser.uid
-
-      });
-
-  } catch(error) {
-
-    alert(
-      "Status update failed:\n" +
-      error.message
-    );
-
-  }
-
-}
-
-// ======================================================
-// PRODUCTS LIST
-// ======================================================
-
-function loadProducts() {
-
-  const container =
-    $("productsList");
-
-  if (!container) return;
-
-  db.collection("products")
-    .onSnapshot(snapshot => {
-
-      if (snapshot.empty) {
-
-        container.innerHTML =
-          "<p>No products.</p>";
-
-        return;
-
-      }
-
-      container.innerHTML =
-        snapshot.docs.map(doc => {
-
-          const p =
-            doc.data();
-
-          return `
-            <div class="item">
-
-              <img
-                src="${
-                  p.photo ||
-                  p.image ||
-                  "https://via.placeholder.com/400"
-                }"
-              >
-
-              <h3>
-                ${escapeHTML(
-                  p.name || "Product"
-                )}
-              </h3>
-
-              <p>
-                ₹${Number(
-                  p.price || 0
-                )}
-              </p>
-
-              <p>
-                Type:
-                ${p.type || ""}
-              </p>
-
-              ${
-                p.stock !== undefined
-                ?
-                `<p>Stock: ${p.stock}</p>`
-                :
-                ""
-              }
-
-              <button
-                class="danger"
-                onclick="deleteProduct(
-                  '${doc.id}'
-                )"
-              >
-                DELETE
-              </button>
-
-            </div>
-          `;
-
-        }).join("");
-
-    });
-
-}
-
-async function deleteProduct(id) {
-
-  if (
-    !confirm(
-      "Product delete karna hai?"
-    )
-  ) return;
-
-  try {
-
-    await db
-      .collection("products")
-      .doc(id)
-      .delete();
-
-  } catch(error) {
-
-    alert(error.message);
-
-  }
-
-}
-
-// ======================================================
-// SHOPS
-// ======================================================
-
-function loadShops() {
-
-  const container =
-    $("shopsList");
-
-  if (!container) return;
-
-  db.collection("shops")
-    .onSnapshot(snapshot => {
-
-      if (snapshot.empty) {
-
-        container.innerHTML =
-          "<p>No shops.</p>";
-
-        return;
-
-      }
-
-      container.innerHTML =
-        snapshot.docs.map(doc => {
-
-          const s =
-            doc.data();
-
-          return `
-            <div class="item">
-
-              <h3>
-                ${escapeHTML(
-                  s.name || "Shop"
-                )}
-              </h3>
-
-              <p>
-                ${escapeHTML(
-                  s.category || ""
-                )}
-              </p>
-
-              <p>
-                ${escapeHTML(
-                  s.phone || ""
-                )}
-              </p>
-
-              <p>
-                ${escapeHTML(
-                  s.address || ""
-                )}
-              </p>
-
-              <button
-                class="danger"
-                onclick="deleteShop(
-                  '${doc.id}'
-                )"
-              >
-                DELETE
-              </button>
-
-            </div>
-          `;
-
-        }).join("");
-
-    });
-
-}
-
-async function deleteShop(id) {
-
-  if (
-    !confirm(
-      "Shop delete karna hai?"
-    )
-  ) return;
-
-  try {
-
-    await db
-      .collection("shops")
-      .doc(id)
-      .delete();
-
-  } catch(error) {
-
-    alert(error.message);
-
-  }
-
-}
-
-// ======================================================
-// ATTENDANCE
-// ======================================================
-
-async function dutyIn() {
-
-  const user =
-    auth.currentUser;
-
-  if (!user) return;
-
-  try {
-
-    await db
-      .collection("attendance")
-      .add({
-
-        uid:user.uid,
-
-        type:"DUTY_IN",
-
-        createdAt:
-          firebase.firestore
-            .FieldValue
-            .serverTimestamp()
-
-      });
-
-    alert("Duty IN recorded ✅");
-
-  } catch(error) {
-
-    alert(error.message);
-
-  }
-
-}
-
-async function dutyOff() {
-
-  const user =
-    auth.currentUser;
-
-  if (!user) return;
-
-  try {
-
-    await db
-      .collection("attendance")
-      .add({
-
-        uid:user.uid,
-
-        type:"DUTY_OFF",
-
-        createdAt:
-          firebase.firestore
-            .FieldValue
-            .serverTimestamp()
-
-      });
-
-    alert("Duty OFF recorded ✅");
-
-  } catch(error) {
-
-    alert(error.message);
-
-  }
-
-}
-
-// ======================================================
-// ESCAPE
-// ======================================================
 
 function escapeHTML(value) {
 
@@ -991,3 +72,965 @@ function escapeHTML(value) {
     .replace(/'/g,"&#039;");
 
 }
+
+
+function money(value) {
+
+  return "₹" +
+    Number(value || 0)
+      .toLocaleString("en-IN");
+
+}
+
+
+function message(text) {
+
+  const el =
+    $("message");
+
+  if (!el) {
+
+    alert(text);
+
+    return;
+
+  }
+
+  el.textContent =
+    text;
+
+  el.classList.add(
+    "show"
+  );
+
+  setTimeout(() => {
+
+    el.classList.remove(
+      "show"
+    );
+
+  },2300);
+
+}
+
+
+async function setupRecaptcha() {
+
+  if (!$("recaptcha")) {
+    return;
+  }
+
+  if (recaptchaVerifier) {
+    return;
+  }
+
+  recaptchaVerifier =
+    new RecaptchaVerifier(
+      auth,
+      "recaptcha",
+      {
+        size:"invisible"
+      }
+    );
+
+  await recaptchaVerifier.render();
+
+}
+
+
+async function sendOTP() {
+
+  const phone =
+    $("teamPhone")
+      ?.value
+      .trim();
+
+  if (!phone) {
+
+    return message(
+      "Mobile number daalo."
+    );
+
+  }
+
+  if (!phone.startsWith("+")) {
+
+    return message(
+      "Country code ke saath number daalo."
+    );
+
+  }
+
+  try {
+
+    await setupRecaptcha();
+
+    confirmationResult =
+      await signInWithPhoneNumber(
+        auth,
+        phone,
+        recaptchaVerifier
+      );
+
+    message(
+      "OTP bhej diya ✅"
+    );
+
+  } catch(error) {
+
+    console.error(error);
+
+    message(
+      error.message
+    );
+
+  }
+
+}
+
+window.sendOTP =
+  sendOTP;
+
+
+async function verifyOTP() {
+
+  if (!confirmationResult) {
+
+    return message(
+      "Pehle OTP bhejo."
+    );
+
+  }
+
+  const otp =
+    $("teamOTP")
+      ?.value
+      .trim();
+
+  if (!otp) {
+
+    return message(
+      "OTP daalo."
+    );
+
+  }
+
+  try {
+
+    await confirmationResult.confirm(
+      otp
+    );
+
+  } catch(error) {
+
+    console.error(error);
+
+    message(
+      "Galat OTP ❌"
+    );
+
+  }
+
+}
+
+window.verifyOTP =
+  verifyOTP;
+
+
+async function checkTeamAccess(user) {
+
+  const userRef =
+    doc(
+      db,
+      "users",
+      user.uid
+    );
+
+  const snapshot =
+    await getDoc(
+      userRef
+    );
+
+  if (!snapshot.exists()) {
+
+    await signOut(auth);
+
+    message(
+      "Team access nahi hai."
+    );
+
+    return false;
+
+  }
+
+  const role =
+    snapshot.data().role;
+
+  if (
+    ![
+      "team",
+      "admin",
+      "owner"
+    ].includes(role)
+  ) {
+
+    await signOut(auth);
+
+    message(
+      "Team access denied."
+    );
+
+    return false;
+
+  }
+
+  return true;
+
+}
+
+
+onAuthStateChanged(
+  auth,
+  async user => {
+
+    currentUser =
+      user;
+
+    if (!user) {
+
+      $("loginScreen")
+        ?.classList.remove(
+          "hidden"
+        );
+
+      $("dashboard")
+        ?.classList.add(
+          "hidden"
+        );
+
+      return;
+
+    }
+
+    const allowed =
+      await checkTeamAccess(
+        user
+      );
+
+    if (!allowed) {
+      return;
+    }
+
+    $("loginScreen")
+      ?.classList.add(
+        "hidden"
+      );
+
+    $("dashboard")
+      ?.classList.remove(
+        "hidden"
+      );
+
+    startDashboard();
+
+  }
+);
+
+
+async function saveShop() {
+
+  if (!currentUser) {
+    return message(
+      "Team login required."
+    );
+  }
+
+  const name =
+    $("shopName")
+      ?.value
+      .trim();
+
+  if (!name) {
+
+    return message(
+      "Shop name daalo."
+    );
+
+  }
+
+  try {
+
+    await addDoc(
+      collection(
+        db,
+        "shops"
+      ),
+      {
+        name,
+        category:
+          $("shopCategory")
+            .value,
+        createdBy:
+          currentUser.uid,
+        createdAt:
+          serverTimestamp()
+      }
+    );
+
+    $("shopName").value =
+      "";
+
+    message(
+      "Shop save ho gaya ✅"
+    );
+
+  } catch(error) {
+
+    message(
+      error.message
+    );
+
+  }
+
+}
+
+window.saveShop =
+  saveShop;
+
+
+async function saveProduct() {
+
+  if (!currentUser) {
+    return message(
+      "Login required."
+    );
+  }
+
+  const name =
+    $("pName")
+      ?.value
+      .trim();
+
+  const price =
+    Number(
+      $("pPrice")
+        ?.value
+    );
+
+  const stock =
+    Number(
+      $("pStock")
+        ?.value || 0
+    );
+
+  if (
+    !name ||
+    !Number.isFinite(price)
+  ) {
+
+    return message(
+      "Product name aur price required."
+    );
+
+  }
+
+  try {
+
+    await addDoc(
+      collection(
+        db,
+        "products"
+      ),
+      {
+        name,
+        price,
+        photo:
+          $("pPhoto")
+            ?.value
+            .trim() || "",
+        category:
+          $("pCategory")
+            .value,
+        stock,
+        type:
+          "local",
+        createdBy:
+          currentUser.uid,
+        createdAt:
+          serverTimestamp()
+      }
+    );
+
+    $("pName").value = "";
+    $("pPrice").value = "";
+    $("pPhoto").value = "";
+    $("pStock").value = "1";
+
+    message(
+      "Product save ho gaya ✅"
+    );
+
+  } catch(error) {
+
+    message(
+      error.message
+    );
+
+  }
+
+}
+
+window.saveProduct =
+  saveProduct;
+
+
+async function saveAffiliate() {
+
+  const name =
+    $("aName")
+      ?.value
+      .trim();
+
+  const link =
+    $("aLink")
+      ?.value
+      .trim();
+
+  if (!name || !link) {
+
+    return message(
+      "Name aur Amazon link required."
+    );
+
+  }
+
+  try {
+
+    await addDoc(
+      collection(
+        db,
+        "products"
+      ),
+      {
+        name,
+        price:
+          Number(
+            $("aPrice")
+              ?.value || 0
+          ),
+        photo:
+          $("aPhoto")
+            ?.value
+            .trim() || "",
+        link,
+        type:
+          "affiliate",
+        createdBy:
+          currentUser.uid,
+        createdAt:
+          serverTimestamp()
+      }
+    );
+
+    $("aName").value = "";
+    $("aPrice").value = "";
+    $("aPhoto").value = "";
+    $("aLink").value = "";
+
+    message(
+      "Affiliate product save ho gaya ✅"
+    );
+
+  } catch(error) {
+
+    message(
+      error.message
+    );
+
+  }
+
+}
+
+window.saveAffiliate =
+  saveAffiliate;
+
+
+async function saveBanner() {
+
+  const url =
+    $("bannerUrl")
+      ?.value
+      .trim();
+
+  if (!url) {
+
+    return message(
+      "Banner URL daalo."
+    );
+
+  }
+
+  try {
+
+    await setDoc(
+      doc(
+        db,
+        "banner",
+        "main"
+      ),
+      {
+        url,
+        updatedBy:
+          currentUser.uid,
+        updatedAt:
+          serverTimestamp()
+      }
+    );
+
+    message(
+      "Banner update ho gaya ✅"
+    );
+
+  } catch(error) {
+
+    message(
+      error.message
+    );
+
+  }
+
+}
+
+window.saveBanner =
+  saveBanner;
+
+
+async function uploadSelfie() {
+
+  const file =
+    $("selfie")
+      ?.files?.[0];
+
+  if (!file) {
+
+    return message(
+      "Selfie select karo."
+    );
+
+  }
+
+  try {
+
+    const fileRef =
+      ref(
+        storage,
+        `attendance/${currentUser.uid}/${Date.now()}-${file.name}`
+      );
+
+    await uploadBytes(
+      fileRef,
+      file
+    );
+
+    const url =
+      await getDownloadURL(
+        fileRef
+      );
+
+    await addDoc(
+      collection(
+        db,
+        "attendance"
+      ),
+      {
+        uid:
+          currentUser.uid,
+        type:
+          "IN",
+        photo:
+          url,
+        createdAt:
+          serverTimestamp()
+      }
+    );
+
+    message(
+      "Duty IN recorded ✅"
+    );
+
+  } catch(error) {
+
+    console.error(error);
+
+    message(
+      error.message
+    );
+
+  }
+
+}
+
+window.uploadSelfie =
+  uploadSelfie;
+
+
+async function dutyOff() {
+
+  try {
+
+    await addDoc(
+      collection(
+        db,
+        "attendance"
+      ),
+      {
+        uid:
+          currentUser.uid,
+        type:
+          "OUT",
+        createdAt:
+          serverTimestamp()
+      }
+    );
+
+    message(
+      "Duty OFF recorded ✅"
+    );
+
+  } catch(error) {
+
+    message(
+      error.message
+    );
+
+  }
+
+}
+
+window.dutyOff =
+  dutyOff;
+
+
+function startDashboard() {
+
+  if (listenersStarted) {
+    return;
+  }
+
+  listenersStarted = true;
+
+
+  onSnapshot(
+    query(
+      collection(
+        db,
+        "orders"
+      ),
+      orderBy(
+        "createdAt",
+        "desc"
+      )
+    ),
+    snapshot => {
+
+      $("ordersCount")
+        .textContent =
+        snapshot.size;
+
+      if (!$("ordersList")) {
+        return;
+      }
+
+      $("ordersList").innerHTML =
+        snapshot.docs.map(
+          d => {
+
+            const o =
+              d.data();
+
+            return `
+              <div class="item">
+
+                <b>
+                  Order ID:
+                  ${escapeHTML(d.id)}
+                </b>
+
+                <br>
+
+                Amount:
+                ${money(o.total)}
+
+                <br>
+
+                Status:
+                ${escapeHTML(
+                  o.status || "NEW"
+                )}
+
+                <br>
+
+                Phone:
+                ${escapeHTML(
+                  o.phone || ""
+                )}
+
+                <br>
+
+                Address:
+                ${escapeHTML(
+                  o.address || ""
+                )}
+
+                <br><br>
+
+                <button
+                  class="primary"
+                  data-status="${d.id}|CONFIRMED">
+                  CONFIRM
+                </button>
+
+                <button
+                  class="secondary"
+                  data-status="${d.id}|DELIVERED">
+                  DELIVERED
+                </button>
+
+                <button
+                  class="danger"
+                  data-status="${d.id}|CANCELLED">
+                  CANCEL
+                </button>
+
+              </div>
+            `;
+
+          }
+        ).join("")
+        ||
+        "<p>No orders.</p>";
+
+    },
+    error => {
+
+      console.error(
+        "Orders:",
+        error
+      );
+
+    }
+  );
+
+
+  onSnapshot(
+    collection(
+      db,
+      "products"
+    ),
+    snapshot => {
+
+      $("productsCount")
+        .textContent =
+        snapshot.size;
+
+      if (!$("productsList")) {
+        return;
+      }
+
+      $("productsList").innerHTML =
+        snapshot.docs.map(
+          d => {
+
+            const p =
+              d.data();
+
+            return `
+              <div class="item">
+
+                <b>
+                  ${escapeHTML(
+                    p.name
+                  )}
+                </b>
+
+                •
+                ${money(p.price)}
+
+                •
+                ${escapeHTML(
+                  p.type
+                )}
+
+                <br><br>
+
+                <button
+                  class="danger"
+                  data-delete="${d.id}">
+                  DELETE
+                </button>
+
+              </div>
+            `;
+
+          }
+        ).join("")
+        ||
+        "<p>No products.</p>";
+
+    }
+  );
+
+
+  onSnapshot(
+    collection(
+      db,
+      "shops"
+    ),
+    snapshot => {
+
+      $("shopsCount")
+        .textContent =
+        snapshot.size;
+
+      if (!$("shopsList")) {
+        return;
+      }
+
+      $("shopsList").innerHTML =
+        snapshot.docs.map(
+          d => {
+
+            const s =
+              d.data();
+
+            return `
+              <div class="item">
+
+                <b>
+                  ${escapeHTML(
+                    s.name
+                  )}
+                </b>
+
+                •
+                ${escapeHTML(
+                  s.category
+                )}
+
+              </div>
+            `;
+
+          }
+        ).join("")
+        ||
+        "<p>No shops.</p>";
+
+    }
+  );
+
+}
+
+
+document.addEventListener(
+  "click",
+  async event => {
+
+    const statusButton =
+      event.target.closest(
+        "[data-status]"
+      );
+
+    if (statusButton) {
+
+      const [
+        orderId,
+        status
+      ] =
+        statusButton
+          .dataset
+          .status
+          .split("|");
+
+      try {
+
+        await updateDoc(
+          doc(
+            db,
+            "orders",
+            orderId
+          ),
+          {
+            status,
+            updatedBy:
+              currentUser.uid,
+            updatedAt:
+              serverTimestamp()
+          }
+        );
+
+        message(
+          "Order updated ✅"
+        );
+
+      } catch(error) {
+
+        message(
+          error.message
+        );
+
+      }
+
+      return;
+    }
+
+
+    const deleteButton =
+      event.target.closest(
+        "[data-delete]"
+      );
+
+    if (deleteButton) {
+
+      if (
+        !confirm(
+          "Product delete karna hai?"
+        )
+      ) {
+        return;
+      }
+
+      try {
+
+        await deleteDoc(
+          doc(
+            db,
+            "products",
+            deleteButton.dataset.delete
+          )
+        );
+
+        message(
+          "Product deleted."
+        );
+
+      } catch(error) {
+
+        message(
+          error.message
+        );
+
+      }
+
+    }
+
+  }
+);
+
+
+$("logoutBtn")
+  ?.addEventListener(
+    "click",
+    () => {
+      signOut(auth);
+    }
+  );
