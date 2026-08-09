@@ -1,10 +1,13 @@
 {
-  "name": "VAISHNAV Digital Mall",
-  "short_name": "VAISHNAV",
+  "name": "AIO DIGITAL MALL",
+  "short_name": "AIO MALL",
+  "description": "AIO DIGITAL MALL - Local Shops, Products & COD",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#FFF8F0",
-  "theme_color": "#FF6600",
+  "background_color": "#fff8f0",
+  "theme_color": "#ff6600",
+  "orientation": "portrait",
   "icons": [
     {
       "src": "icon-192.png",
