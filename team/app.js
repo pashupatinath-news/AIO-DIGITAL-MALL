@@ -1,11 +1,11 @@
-// =====================================================
+// ======================================================
 // AIO DIGITAL MALL - TEAM APP
-// =====================================================
+// ======================================================
 
 const firebaseConfig = {
 
   apiKey:
-    "AIzaSyH9RRJTEETFh4zHWwCMO4d6qMielJQFA",
+    "AIzaSyAyH9RRJTEETFh4zHWwCMO4d6qMielJQFA",
 
   authDomain:
     "aio-digital-mall.firebaseapp.com",
@@ -24,6 +24,7 @@ const firebaseConfig = {
 
   measurementId:
     "G-TNDT9FYNRP"
+
 };
 
 if (!firebase.apps.length) {
@@ -36,182 +37,305 @@ const db = firebase.firestore();
 const $ = id =>
   document.getElementById(id);
 
-let unsubscribeOrders = null;
-let unsubscribeProducts = null;
-let unsubscribeShops = null;
+let teamConfirmation = null;
+let teamRecaptcha = null;
 
-// =====================================================
-// TEAM LOGIN
-// =====================================================
+// ======================================================
+// TEAM OTP LOGIN
+// ======================================================
 
-function teamLogin() {
+function setupTeamRecaptcha() {
 
-  const email =
-    $("teamEmail").value.trim();
+  if (!$("recaptcha")) return;
+  if (teamRecaptcha) return;
 
-  const password =
-    $("teamPassword").value;
+  teamRecaptcha =
+    new firebase.auth.RecaptchaVerifier(
+      "recaptcha",
+      {
+        size:"invisible"
+      }
+    );
 
-  if (!email || !password) {
+  teamRecaptcha.render();
+}
 
-    $("loginError").innerText =
-      "Email aur password required.";
+async function sendTeamOTP() {
 
-    return;
+  try {
+
+    setupTeamRecaptcha();
+
+    const phone =
+      $("phone").value.trim();
+
+    if (!phone) {
+      alert("Mobile number daalo");
+      return;
+    }
+
+    teamConfirmation =
+      await auth.signInWithPhoneNumber(
+        phone,
+        teamRecaptcha
+      );
+
+    alert("Team OTP bhej diya ✅");
+
+  } catch(error) {
+
+    console.error(error);
+
+    alert(error.message);
+
   }
+}
 
-  auth.signInWithEmailAndPassword(
-    email,
-    password
-  )
-  .then(async result => {
+async function verifyTeamOTP() {
 
-    const uid = result.user.uid;
+  try {
 
-    const teamDoc =
+    const otp =
+      $("otp").value.trim();
+
+    if (!teamConfirmation) {
+
+      alert("Pehle OTP bhejo");
+      return;
+
+    }
+
+    const result =
+      await teamConfirmation.confirm(otp);
+
+    const uid =
+      result.user.uid;
+
+    const roleDoc =
       await db
         .collection("teamUsers")
         .doc(uid)
         .get();
 
-    if (
-      !teamDoc.exists ||
-      teamDoc.data().active !== true
-    ) {
+    if (!roleDoc.exists) {
 
       await auth.signOut();
 
-      throw new Error(
-        "Team access allowed nahi hai."
+      alert(
+        "Aap Team Member ke roop mein authorized nahi ho."
       );
+
+      return;
+
     }
 
-    showApp();
+    const role =
+      roleDoc.data().role;
 
-  })
-  .catch(error => {
+    if (!role) {
 
-    console.error(error);
+      await auth.signOut();
 
-    $("loginError").innerText =
-      error.message;
-  });
-}
+      alert("Team role missing hai.");
+      return;
 
-function teamLogout() {
-
-  auth.signOut()
-    .then(() => {
-      location.reload();
-    });
-}
-
-function showApp() {
-
-  $("loginScreen")
-    .classList.add("hidden");
-
-  $("app")
-    .classList.remove("hidden");
-
-  loadAll();
-}
-
-// =====================================================
-// AUTH STATE
-// =====================================================
-
-auth.onAuthStateChanged(async user => {
-
-  if (!user) return;
-
-  try {
-
-    const doc =
-      await db
-        .collection("teamUsers")
-        .doc(user.uid)
-        .get();
-
-    if (
-      doc.exists &&
-      doc.data().active === true
-    ) {
-      showApp();
     }
+
+    location.href =
+      "dashboard.html";
 
   } catch(error) {
 
     console.error(error);
+
+    alert(
+      "Team login failed:\n" +
+      error.message
+    );
+
   }
-});
+}
 
-// =====================================================
-// ADD SHOP
-// =====================================================
+// ======================================================
+// TEAM AUTH
+// ======================================================
 
-async function addShop() {
+async function requireTeam() {
+
+  return new Promise(resolve => {
+
+    auth.onAuthStateChanged(
+      async user => {
+
+        if (!user) {
+
+          if (
+            !location.pathname.endsWith(
+              "/index.html"
+            )
+          ) {
+            location.href =
+              "index.html";
+          }
+
+          resolve(false);
+          return;
+
+        }
+
+        const doc =
+          await db
+            .collection("teamUsers")
+            .doc(user.uid)
+            .get();
+
+        if (!doc.exists) {
+
+          await auth.signOut();
+
+          location.href =
+            "index.html";
+
+          resolve(false);
+          return;
+
+        }
+
+        resolve(true);
+
+      }
+    );
+
+  });
+
+}
+
+function logoutTeam() {
+
+  auth.signOut()
+    .then(() => {
+
+      location.href =
+        "index.html";
+
+    });
+
+}
+
+// ======================================================
+// DASHBOARD STATS
+// ======================================================
+
+async function loadDashboardStats() {
+
+  try {
+
+    const orders =
+      await db
+        .collection("orders")
+        .get();
+
+    const products =
+      await db
+        .collection("products")
+        .get();
+
+    const shops =
+      await db
+        .collection("shops")
+        .get();
+
+    if ($("ordersCount"))
+      $("ordersCount").innerText =
+        orders.size;
+
+    if ($("newOrdersCount"))
+      $("newOrdersCount").innerText =
+        orders.docs.filter(
+          d => d.data().status === "NEW"
+        ).length;
+
+    if ($("productsCount"))
+      $("productsCount").innerText =
+        products.size;
+
+    if ($("shopsCount"))
+      $("shopsCount").innerText =
+        shops.size;
+
+  } catch(error) {
+
+    console.error(error);
+
+  }
+
+}
+
+// ======================================================
+// SAVE SHOP
+// ======================================================
+
+async function saveShop() {
 
   const name =
     $("shopName").value.trim();
 
-  const category =
-    $("shopCategory").value;
-
-  const phone =
-    $("shopPhone").value.trim();
-
-  const address =
-    $("shopAddress").value.trim();
-
   if (!name) {
 
-    alert("Shop name required.");
+    alert("Shop name required");
     return;
+
   }
 
   try {
 
-    await db
-      .collection("shops")
-      .add({
+    await db.collection("shops").add({
 
-        name,
-        category,
-        phone,
-        address,
+      name,
 
-        active: true,
+      category:
+        $("shopCategory").value,
 
-        createdAt:
-          firebase.firestore
-            .FieldValue
-            .serverTimestamp()
+      phone:
+        $("shopPhone").value.trim(),
 
-      });
+      address:
+        $("shopAddress").value.trim(),
+
+      createdBy:
+        auth.currentUser.uid,
+
+      createdAt:
+        firebase.firestore
+          .FieldValue
+          .serverTimestamp()
+
+    });
+
+    alert("Shop saved ✅");
 
     $("shopName").value = "";
     $("shopPhone").value = "";
     $("shopAddress").value = "";
-
-    alert("Shop added ✅");
 
     loadShops();
 
   } catch(error) {
 
     alert(
-      "Shop error: " +
+      "Shop save error:\n" +
       error.message
     );
+
   }
+
 }
 
-// =====================================================
-// ADD LOCAL PRODUCT
-// =====================================================
+// ======================================================
+// LOCAL PRODUCT
+// ======================================================
 
-async function addLocalProduct() {
+async function saveLocalProduct() {
 
   const name =
     $("pName").value.trim();
@@ -219,85 +343,78 @@ async function addLocalProduct() {
   const price =
     Number($("pPrice").value);
 
-  const photo =
-    $("pPhoto").value.trim();
+  if (!name || price < 0) {
 
-  const category =
-    $("pCategory").value;
+    alert(
+      "Product name aur valid price daalo"
+    );
 
-  const stock =
-    Number($("pStock").value);
-
-  const shopId =
-    $("pShop").value;
-
-  if (!name) {
-
-    alert("Product name required.");
     return;
-  }
 
-  if (!price || price < 0) {
-
-    alert("Valid price daalo.");
-    return;
   }
 
   try {
 
-    await db
-      .collection("products")
-      .add({
+    await db.collection("products").add({
 
-        name,
-        price,
-        photo,
-        category,
-        stock,
+      name,
 
-        shopId,
+      price,
 
-        type: "local",
+      photo:
+        $("pPhoto").value.trim(),
 
-        active: true,
+      category:
+        $("pCategory").value,
 
-        createdAt:
-          firebase.firestore
-            .FieldValue
-            .serverTimestamp()
+      stock:
+        Number($("pStock").value || 0),
 
-      });
+      shopId:
+        $("pShopId").value.trim(),
+
+      type:
+        "local",
+
+      createdBy:
+        auth.currentUser.uid,
+
+      createdAt:
+        firebase.firestore
+          .FieldValue
+          .serverTimestamp()
+
+    });
+
+    alert("Product saved ✅");
 
     $("pName").value = "";
     $("pPrice").value = "";
     $("pPhoto").value = "";
     $("pStock").value = "1";
+    $("pShopId").value = "";
 
-    alert("Product saved ✅");
+    loadProducts();
 
   } catch(error) {
 
     alert(
-      "Product error: " +
+      "Product save error:\n" +
       error.message
     );
+
   }
+
 }
 
-// =====================================================
-// ADD AFFILIATE
-// =====================================================
+// ======================================================
+// AFFILIATE PRODUCT
+// ======================================================
 
-async function addAffiliateProduct() {
+async function saveAffiliateProduct() {
 
   const name =
     $("aName").value.trim();
-
-  const price =
-    Number($("aPrice").value);
-
-  const photo =
-    $("aPhoto").value.trim();
 
   const link =
     $("aLink").value.trim();
@@ -305,63 +422,73 @@ async function addAffiliateProduct() {
   if (!name || !link) {
 
     alert(
-      "Name aur Amazon link required."
+      "Product name aur Amazon link required hai"
     );
 
     return;
+
   }
 
   try {
 
-    await db
-      .collection("products")
-      .add({
+    await db.collection("products").add({
 
-        name,
-        price,
-        photo,
-        link,
+      name,
 
-        type: "affiliate",
+      price:
+        Number(
+          $("aPrice").value || 0
+        ),
 
-        active: true,
+      photo:
+        $("aPhoto").value.trim(),
 
-        createdAt:
-          firebase.firestore
-            .FieldValue
-            .serverTimestamp()
+      link,
 
-      });
+      type:
+        "affiliate",
+
+      createdBy:
+        auth.currentUser.uid,
+
+      createdAt:
+        firebase.firestore
+          .FieldValue
+          .serverTimestamp()
+
+    });
+
+    alert("Affiliate product saved ✅");
 
     $("aName").value = "";
     $("aPrice").value = "";
     $("aPhoto").value = "";
     $("aLink").value = "";
 
-    alert("Affiliate product saved ✅");
+    loadProducts();
 
   } catch(error) {
 
-    alert(
-      "Affiliate error: " +
-      error.message
-    );
+    alert(error.message);
+
   }
+
 }
 
-// =====================================================
+// ======================================================
 // BANNER
-// =====================================================
+// ======================================================
 
 async function saveBanner() {
 
   const url =
-    $("bannerURL").value.trim();
+    $("bannerUrl").value.trim();
 
   if (!url) {
 
-    alert("Banner URL required.");
+    alert("Banner URL daalo");
     return;
+
   }
 
   try {
@@ -372,6 +499,9 @@ async function saveBanner() {
       .set({
 
         url,
+
+        updatedBy:
+          auth.currentUser.uid,
 
         updatedAt:
           firebase.firestore
@@ -384,174 +514,161 @@ async function saveBanner() {
 
   } catch(error) {
 
-    alert(
-      "Banner error: " +
-      error.message
-    );
+    alert(error.message);
+
   }
+
 }
 
-// =====================================================
+// ======================================================
 // ORDERS
-// =====================================================
+// ======================================================
 
 function loadOrders() {
 
-  if (unsubscribeOrders) {
-    unsubscribeOrders();
-  }
+  const container =
+    $("ordersList") ||
+    $("dashboardOrders");
 
-  unsubscribeOrders =
-    db.collection("orders")
-      .orderBy(
-        "createdAt",
-        "desc"
-      )
-      .onSnapshot(
-        snapshot => {
+  if (!container) return;
 
-          const container =
-            $("orders");
+  db.collection("orders")
+    .orderBy(
+      "createdAt",
+      "desc"
+    )
+    .onSnapshot(
 
-          container.innerHTML = "";
+      snapshot => {
 
-          let newOrders = 0;
+        if (snapshot.empty) {
 
-          snapshot.forEach(doc => {
+          container.innerHTML =
+            "<p>No orders.</p>";
+
+          return;
+
+        }
+
+        container.innerHTML =
+          snapshot.docs.map(doc => {
 
             const o =
               doc.data();
 
-            if (o.status === "NEW") {
-              newOrders++;
-            }
+            return `
+              <div class="item">
 
-            const items =
-              (o.items || [])
-                .map(
-                  item =>
-                    `${item.name} - ₹${item.price}`
-                )
-                .join("<br>");
+                <h3>
+                  Order #${doc.id}
+                </h3>
 
-            const status =
-              o.status || "NEW";
+                <p>
+                  <b>Customer:</b>
+                  ${escapeHTML(
+                    o.phone || ""
+                  )}
+                </p>
 
-            container.innerHTML += `
+                <p>
+                  <b>Address:</b>
+                  ${escapeHTML(
+                    o.address || ""
+                  )}
+                </p>
 
-              <div class="order">
+                <p>
+                  <b>Total:</b>
+                  ₹${Number(
+                    o.total || 0
+                  )}
+                </p>
 
-                <b>Order ID:</b>
-                ${doc.id}
+                <p>
+                  <b>Payment:</b>
+                  ${o.paymentMethod || "COD"}
+                </p>
 
-                <br><br>
+                <p>
+                  <b>Status:</b>
+                  ${o.status || "NEW"}
+                </p>
 
-                <b>Phone:</b>
-                ${o.customerPhone || o.phone || "-"}
+                <p>
+                  <b>Delivery OTP:</b>
+                  ${o.deliveryOTP || "----"}
+                </p>
 
-                <br>
-
-                <b>Address:</b>
-                ${escapeHTML(
-                  o.address || "-"
-                )}
-
-                <br><br>
-
-                <b>Items:</b>
-                <br>
-                ${items}
-
-                <br><br>
-
-                <b>Total:</b>
-                ₹${Number(o.total || 0)}
-
-                <br>
-
-                <b>Payment:</b>
-                ${o.paymentMethod || "COD"}
-
-                <br>
-
-                <b>Delivery OTP:</b>
-                ${o.deliveryOTP || "-"}
-
-                <br><br>
-
-                <b>Status:</b>
-                ${status}
-
-                <br><br>
-
-                <button
-                  class="green"
-                  onclick="updateOrderStatus(
+                <select
+                  onchange="updateOrderStatus(
                     '${doc.id}',
-                    'CONFIRMED'
+                    this.value
                   )"
                 >
-                  CONFIRM
-                </button>
 
-                <button
-                  class="orange"
-                  onclick="updateOrderStatus(
-                    '${doc.id}',
-                    'OUT_FOR_DELIVERY'
-                  )"
-                >
-                  OUT FOR DELIVERY
-                </button>
+                  <option
+                    ${o.status==="NEW"?"selected":""}
+                  >
+                    NEW
+                  </option>
 
-                <button
-                  class="white"
-                  onclick="updateOrderStatus(
-                    '${doc.id}',
-                    'DELIVERED'
-                  )"
-                >
-                  DELIVERED
-                </button>
+                  <option
+                    ${o.status==="CONFIRMED"?"selected":""}
+                  >
+                    CONFIRMED
+                  </option>
 
-                <button
-                  class="red"
-                  onclick="updateOrderStatus(
-                    '${doc.id}',
-                    'CANCELLED'
-                  )"
-                >
-                  CANCEL
-                </button>
+                  <option
+                    ${o.status==="PACKED"?"selected":""}
+                  >
+                    PACKED
+                  </option>
+
+                  <option
+                    ${o.status==="OUT_FOR_DELIVERY"?"selected":""}
+                  >
+                    OUT_FOR_DELIVERY
+                  </option>
+
+                  <option
+                    ${o.status==="DELIVERED"?"selected":""}
+                  >
+                    DELIVERED
+                  </option>
+
+                  <option
+                    ${o.status==="CANCELLED"?"selected":""}
+                  >
+                    CANCELLED
+                  </option>
+
+                </select>
 
               </div>
-
             `;
 
-          });
+          }).join("");
 
-          $("statOrders").innerText =
-            snapshot.size;
+      },
 
-          $("statNewOrders").innerText =
-            newOrders;
+      error => {
 
-        },
-        error => {
+        console.error(
+          "Order load error:",
+          error
+        );
 
-          console.error(
-            "Orders:",
-            error
-          );
+        container.innerHTML =
+          "<p>Orders load nahi hue.</p>";
 
-          $("orders").innerHTML =
-            "<p>Orders load nahi hue.</p>";
-        }
-      );
+      }
+
+    );
+
 }
 
 async function updateOrderStatus(
-  id,
+  orderId,
   status
 ) {
 
@@ -559,106 +676,113 @@ async function updateOrderStatus(
 
     await db
       .collection("orders")
-      .doc(id)
+      .doc(orderId)
       .update({
+
         status,
+
         updatedAt:
           firebase.firestore
             .FieldValue
-            .serverTimestamp()
+            .serverTimestamp(),
+
+        updatedBy:
+          auth.currentUser.uid
+
       });
 
   } catch(error) {
 
     alert(
-      "Status update failed: " +
+      "Status update failed:\n" +
       error.message
     );
+
   }
+
 }
 
-// =====================================================
-// PRODUCTS
-// =====================================================
+// ======================================================
+// PRODUCTS LIST
+// ======================================================
 
 function loadProducts() {
 
-  if (unsubscribeProducts) {
-    unsubscribeProducts();
-  }
+  const container =
+    $("productsList");
 
-  unsubscribeProducts =
-    db.collection("products")
-      .onSnapshot(
-        snapshot => {
+  if (!container) return;
 
-          $("statProducts").innerText =
-            snapshot.size;
+  db.collection("products")
+    .onSnapshot(snapshot => {
 
-          const container =
-            $("products");
+      if (snapshot.empty) {
 
-          container.innerHTML = "";
+        container.innerHTML =
+          "<p>No products.</p>";
 
-          snapshot.forEach(doc => {
+        return;
 
-            const p =
-              doc.data();
+      }
 
-            const image =
-              p.photo ||
-              p.image ||
-              "https://via.placeholder.com/400x300?text=Product";
+      container.innerHTML =
+        snapshot.docs.map(doc => {
 
-            container.innerHTML += `
+          const p =
+            doc.data();
 
-              <div class="product">
+          return `
+            <div class="item">
 
-                <img
-                  src="${escapeHTML(image)}"
-                >
+              <img
+                src="${
+                  p.photo ||
+                  p.image ||
+                  "https://via.placeholder.com/400"
+                }"
+              >
 
-                <div class="productContent">
+              <h3>
+                ${escapeHTML(
+                  p.name || "Product"
+                )}
+              </h3>
 
-                  <b>
-                    ${escapeHTML(
-                      p.name || "Product"
-                    )}
-                  </b>
+              <p>
+                ₹${Number(
+                  p.price || 0
+                )}
+              </p>
 
-                  <p>
-                    ₹${Number(p.price || 0)}
-                  </p>
+              <p>
+                Type:
+                ${p.type || ""}
+              </p>
 
-                  <small>
-                    Type:
-                    ${p.type || "local"}
-                    <br>
-                    Stock:
-                    ${p.stock ?? "-"}
-                  </small>
+              ${
+                p.stock !== undefined
+                ?
+                `<p>Stock: ${p.stock}</p>`
+                :
+                ""
+              }
 
-                  <br>
+              <button
+                class="danger"
+                onclick="deleteProduct(
+                  '${doc.id}'
+                )"
+              >
+                DELETE
+              </button>
 
-                  <button
-                    class="red"
-                    onclick="deleteProduct(
-                      '${doc.id}'
-                    )"
-                  >
-                    DELETE
-                  </button>
+            </div>
+          `;
 
-                </div>
+        }).join("");
 
-              </div>
+    });
 
-            `;
-
-          });
-
-        }
-      );
 }
 
 async function deleteProduct(id) {
@@ -667,9 +791,7 @@ async function deleteProduct(id) {
     !confirm(
       "Product delete karna hai?"
     )
-  ) {
-    return;
-  }
+  ) return;
 
   try {
 
@@ -680,106 +802,84 @@ async function deleteProduct(id) {
 
   } catch(error) {
 
-    alert(
-      "Delete failed: " +
-      error.message
-    );
+    alert(error.message);
+
   }
+
 }
 
-// =====================================================
+// ======================================================
 // SHOPS
-// =====================================================
+// ======================================================
 
 function loadShops() {
 
-  if (unsubscribeShops) {
-    unsubscribeShops();
-  }
+  const container =
+    $("shopsList");
 
-  unsubscribeShops =
-    db.collection("shops")
-      .orderBy(
-        "createdAt",
-        "desc"
-      )
-      .onSnapshot(
-        snapshot => {
+  if (!container) return;
 
-          $("statShops").innerText =
-            snapshot.size;
+  db.collection("shops")
+    .onSnapshot(snapshot => {
 
-          const container =
-            $("shops");
+      if (snapshot.empty) {
 
-          const select =
-            $("pShop");
+        container.innerHTML =
+          "<p>No shops.</p>";
 
-          container.innerHTML = "";
+        return;
 
-          select.innerHTML =
-            `<option value="">
-              Select Shop
-            </option>`;
+      }
 
-          snapshot.forEach(doc => {
+      container.innerHTML =
+        snapshot.docs.map(doc => {
 
-            const s =
-              doc.data();
+          const s =
+            doc.data();
 
-            select.innerHTML += `
-              <option value="${doc.id}">
+          return `
+            <div class="item">
+
+              <h3>
                 ${escapeHTML(
                   s.name || "Shop"
                 )}
-              </option>
-            `;
+              </h3>
 
-            container.innerHTML += `
+              <p>
+                ${escapeHTML(
+                  s.category || ""
+                )}
+              </p>
 
-              <div class="card">
+              <p>
+                ${escapeHTML(
+                  s.phone || ""
+                )}
+              </p>
 
-                <b>
-                  ${escapeHTML(
-                    s.name || "Shop"
-                  )}
-                </b>
+              <p>
+                ${escapeHTML(
+                  s.address || ""
+                )}
+              </p>
 
-                <p>
-                  ${escapeHTML(
-                    s.category || ""
-                  )}
-                </p>
+              <button
+                class="danger"
+                onclick="deleteShop(
+                  '${doc.id}'
+                )"
+              >
+                DELETE
+              </button>
 
-                <small>
-                  ${escapeHTML(
-                    s.phone || ""
-                  )}
-                  <br>
-                  ${escapeHTML(
-                    s.address || ""
-                  )}
-                </small>
+            </div>
+          `;
 
-                <br>
+        }).join("");
 
-                <button
-                  class="red"
-                  onclick="deleteShop(
-                    '${doc.id}'
-                  )"
-                >
-                  DELETE
-                </button>
+    });
 
-              </div>
-
-            `;
-
-          });
-
-        }
-      );
 }
 
 async function deleteShop(id) {
@@ -788,9 +888,7 @@ async function deleteShop(id) {
     !confirm(
       "Shop delete karna hai?"
     )
-  ) {
-    return;
-  }
+  ) return;
 
   try {
 
@@ -801,82 +899,95 @@ async function deleteShop(id) {
 
   } catch(error) {
 
-    alert(
-      "Delete failed: " +
-      error.message
-    );
+    alert(error.message);
+
   }
+
 }
 
-// =====================================================
-// UTILITIES
-// =====================================================
+// ======================================================
+// ATTENDANCE
+// ======================================================
+
+async function dutyIn() {
+
+  const user =
+    auth.currentUser;
+
+  if (!user) return;
+
+  try {
+
+    await db
+      .collection("attendance")
+      .add({
+
+        uid:user.uid,
+
+        type:"DUTY_IN",
+
+        createdAt:
+          firebase.firestore
+            .FieldValue
+            .serverTimestamp()
+
+      });
+
+    alert("Duty IN recorded ✅");
+
+  } catch(error) {
+
+    alert(error.message);
+
+  }
+
+}
+
+async function dutyOff() {
+
+  const user =
+    auth.currentUser;
+
+  if (!user) return;
+
+  try {
+
+    await db
+      .collection("attendance")
+      .add({
+
+        uid:user.uid,
+
+        type:"DUTY_OFF",
+
+        createdAt:
+          firebase.firestore
+            .FieldValue
+            .serverTimestamp()
+
+      });
+
+    alert("Duty OFF recorded ✅");
+
+  } catch(error) {
+
+    alert(error.message);
+
+  }
+
+}
+
+// ======================================================
+// ESCAPE
+// ======================================================
 
 function escapeHTML(value) {
 
-  return String(value)
+  return String(value ?? "")
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
 
-    .replace(/&/g, "&amp;")
-
-    .replace(
-      /</g,
-      "&lt;"
-    )
-
-    .replace(
-      />/g,
-      "&gt;"
-    )
-
-    .replace(
-      /"/g,
-      "&quot;"
-    )
-
-    .replace(
-      /'/g,
-      "&#039;"
-    );
-}
-
-function openCustomer() {
-
-  window.open(
-    "../customer/index.html",
-    "_blank"
-  );
-}
-
-function refreshData() {
-
-  loadOrders();
-  loadProducts();
-  loadShops();
-
-  alert("Data refreshed ✅");
-}
-
-function loadAll() {
-
-  loadOrders();
-  loadProducts();
-  loadShops();
-}
-
-// =====================================================
-// SERVICE WORKER
-// =====================================================
-
-if ("serviceWorker" in navigator) {
-
-  window.addEventListener(
-    "load",
-    () => {
-
-      navigator.serviceWorker
-        .register("sw.js")
-        .catch(console.error);
-
-    }
-  );
 }
