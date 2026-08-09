@@ -1,39 +1,133 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>VAISHNAV TEAM LOGIN</title>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AIO DIGITAL MALL TEAM DASHBOARD</title>
 <style>
-body{font-family:sans-serif;background:#222;color:white;display:flex;justify-content:center;align-items:center;height:100vh}
-.box{background:#333;padding:25px;border-radius:10px;width:90%;max-width:350px}
-input,select{width:95%;padding:10px;margin:8px 0;border:none;border-radius:5px}
-button{background:#28a745;color:white;border:none;padding:12px;width:100%;border-radius:5px;font-size:16px}
+body{
+ margin:0;
+ font-family:Arial;
+ background:#111;
+ color:white;
+}
+header{
+ background:#ff6600;
+ padding:15px;
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+}
+.container{
+ padding:15px;
+ max-width:1200px;
+ margin:auto;
+}
+.cards{
+ display:grid;
+ grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+ gap:15px;
+}
+.stat{
+ background:#222;
+ padding:20px;
+ border-radius:12px;
+}
+.stat b{
+ display:block;
+ font-size:30px;
+ color:#ff6600;
+}
+button{
+ background:#ff6600;
+ color:white;
+ border:0;
+ border-radius:8px;
+ padding:10px 15px;
+ font-weight:bold;
+ cursor:pointer;
+}
+.panel{
+ background:#1d1d1d;
+ margin-top:20px;
+ padding:20px;
+ border-radius:12px;
+}
 </style>
 </head>
+
 <body>
-<div class="box">
-<h2>VAISHNAV TEAM PANEL</h2>
-<input id="phone" placeholder="Phone Number" value="9303100358">
-<input id="pass" type="password" placeholder="Password" value="admin7">
-<select id="role">
-  <option>PRODUCT_TEAM</option>
-  <option>OPERATION_TEAM</option>
-  <option>CEO</option>
-  <option>MD</option>
-  <option>OWNER</option>
-</select>
-<button onclick="login()">LOGIN</button>
+
+<header>
+<strong>🚩 AIO DIGITAL MALL</strong>
+<button onclick="logoutTeam()">LOGOUT</button>
+</header>
+
+<div class="container">
+
+<h1>Team Dashboard</h1>
+
+<div class="cards">
+
+<div class="stat">
+Orders
+<b id="ordersCount">0</b>
 </div>
+
+<div class="stat">
+New Orders
+<b id="newOrdersCount">0</b>
+</div>
+
+<div class="stat">
+Products
+<b id="productsCount">0</b>
+</div>
+
+<div class="stat">
+Shops
+<b id="shopsCount">0</b>
+</div>
+
+</div>
+
+<div class="panel">
+
+<h2>Quick Actions</h2>
+
+<button onclick="location.href='dashboard-panel.html'">
+OPEN MANAGEMENT PANEL
+</button>
+
+<button onclick="window.open('../customer/index.html','_blank')">
+OPEN CUSTOMER WEBSITE
+</button>
+
+</div>
+
+<div class="panel">
+
+<h2>Live Orders</h2>
+
+<div id="dashboardOrders">
+Loading...
+</div>
+
+</div>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+<script src="app.js"></script>
+
 <script>
-function login(){
-  let phone = document.getElementById('phone').value;
-  let pass = document.getElementById('pass').value;
-  let role = document.getElementById('role').value;
-  if(phone == "9303100358" && pass == "admin7"){
-    localStorage.setItem('role', role);
-    location.href = 'dashboard-panel.html';
-  } else { alert("Galat Phone ya Password"); }
-}
+requireTeam();
+loadDashboardStats();
+loadDashboardOrders();
 </script>
+
 </body>
 </html>
