@@ -1,45 +1,59 @@
-const CACHE_NAME = "aio-customer-v1";
+const CACHE_NAME =
+  "aio-customer-v1";
 
 const FILES = [
+  "./",
   "./index.html",
   "./app.js",
+  "./firebaseConfig.js",
   "./manifest.json"
 ];
 
-self.addEventListener("install", event => {
+self.addEventListener(
+  "install",
+  event => {
 
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(FILES))
-  );
-
-  self.skipWaiting();
-
-});
-
-self.addEventListener("activate", event => {
-
-  event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(
-        keys
-          .filter(k => k !== CACHE_NAME)
-          .map(k => caches.delete(k))
+    event.waitUntil(
+      caches.open(
+        CACHE_NAME
+      ).then(cache =>
+        cache.addAll(FILES)
       )
-    )
-  );
+    );
 
-  self.clients.claim();
+    self.skipWaiting();
+  }
+);
 
-});
+self.addEventListener(
+  "activate",
+  event => {
 
-self.addEventListener("fetch", event => {
+    event.waitUntil(
+      self.clients.claim()
+    );
 
-  event.respondWith(
-    caches.match(event.request)
-      .then(response =>
-        response || fetch(event.request)
+  }
+);
+
+self.addEventListener(
+  "fetch",
+  event => {
+
+    if (
+      event.request.method !==
+      "GET"
+    ) return;
+
+    event.respondWith(
+      caches.match(
+        event.request
+      ).then(
+        cached =>
+          cached ||
+          fetch(event.request)
       )
-  );
+    );
 
-});
+  }
+);
