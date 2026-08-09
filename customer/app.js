@@ -1,450 +1,76 @@
-// ======================================================
-// AIO DIGITAL MALL
-// CUSTOMER APP + WEBSITE
-// ======================================================
+import {
+  initializeApp
+} from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyAyH9RRJTEETFh4zHWwCMO4d6qMielJQFA",
-  authDomain: "aio-digital-mall.firebaseapp.com",
-  projectId: "aio-digital-mall",
-  storageBucket: "aio-digital-mall.firebasestorage.app",
-  messagingSenderId: "501384049673",
-  appId: "1:501384049673:web:968bd8311cc700f82874d8",
-  measurementId: "G-TNDT9FYNRP"
-};
+import {
+  getAuth,
+  RecaptchaVerifier,
+  signInWithPhoneNumber,
+  onAuthStateChanged,
+  signOut
+} from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
 
-if (!firebase.apps.length) {
-  firebase.initializeApp(firebaseConfig);
-}
+import {
+  getFirestore,
+  collection,
+  query,
+  where,
+  onSnapshot,
+  getDocs,
+  addDoc,
+  doc,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
 
-const auth = firebase.auth();
-const db = firebase.firestore();
+import {
+  firebaseConfig
+} from "./firebaseConfig.js";
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
 const $ = id => document.getElementById(id);
 
+let cart =
+  JSON.parse(
+    localStorage.getItem("aio_cart") || "[]"
+  );
+
 let confirmationResult = null;
 let recaptchaVerifier = null;
-let cart = JSON.parse(localStorage.getItem("aio_cart") || "[]");
-let allLocalProducts = [];
-let timerSeconds = 10799;
 
-// ======================================================
-// SECURITY HELPERS
-// ======================================================
-
-function escapeHTML(value) {
+function esc(value) {
   return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
 }
 
-// ======================================================
-// LOGIN
-// ======================================================
-
-function openLogin() {
-  $("loginModal").style.display = "flex";
+function money(value) {
+  return "₹" +
+    Number(value || 0)
+      .toLocaleString("en-IN");
 }
 
-function closeLogin() {
-  $("loginModal").style.display = "none";
-}
+function toast(message) {
 
-function setupRecaptcha() {
+  const el = $("toast");
 
-  if (!$("recaptcha")) return;
-  if (recaptchaVerifier) return;
-
-  recaptchaVerifier =
-    new firebase.auth.RecaptchaVerifier(
-      "recaptcha",
-      {
-        size: "invisible"
-      }
-    );
-
-  recaptchaVerifier.render();
-}
-
-async function sendOTP() {
-
-  try {
-
-    setupRecaptcha();
-
-    const phone = $("phone").value.trim();
-
-    if (!phone) {
-      alert("Mobile number daalo");
-      return;
-    }
-
-    if (!phone.startsWith("+")) {
-      alert("Country code ke saath number daalo");
-      return;
-    }
-
-    confirmationResult =
-      await auth.signInWithPhoneNumber(
-        phone,
-        recaptchaVerifier
-      );
-
-    alert("OTP Bhej diya ✅");
-
-  } catch (error) {
-
-    console.error(error);
-
-    alert(
-      "OTP error:\n" +
-      error.message
-    );
-
-    if (recaptchaVerifier) {
-      try {
-        recaptchaVerifier.clear();
-      } catch (_) {}
-
-      recaptchaVerifier = null;
-    }
-  }
-}
-
-async function verifyOTP() {
-
-  try {
-
-    const otp = $("otp").value.trim();
-
-    if (!confirmationResult) {
-      alert("Pehle OTP bhejo");
-      return;
-    }
-
-    if (!otp) {
-      alert("OTP daalo");
-      return;
-    }
-
-    const result =
-      await confirmationResult.confirm(otp);
-
-    alert(
-      "Login Ho Gaya ✅\n" +
-      (result.user.phoneNumber || "")
-    );
-
-    closeLogin();
-
-  } catch (error) {
-
-    console.error(error);
-    alert("Galat OTP ❌");
-
-  }
-}
-
-auth.onAuthStateChanged(user => {
-
-  if (user) {
-
-    console.log(
-      "Customer logged in:",
-      user.phoneNumber || user.uid
-    );
-
-  } else {
-
-    console.log("Customer not logged in");
-
-  }
-
-});
-
-// ======================================================
-// PRODUCTS
-// ======================================================
-
-function productImage(p) {
-
-  return (
-    p.photo ||
-    p.image ||
-    "https://via.placeholder.com/500x400?text=Product"
-  );
-}
-
-function renderLocalProducts(products) {
-
-  const container = $("localProducts");
-
-  if (!container) return;
-
-  if (!products.length) {
-
-    container.innerHTML =
-      "<p>Product nahi mila.</p>";
-
+  if (!el) {
+    alert(message);
     return;
   }
 
-  container.innerHTML =
-    products.map(item => {
+  el.textContent = message;
+  el.classList.add("show");
 
-      const p = item.data;
-      const id = item.id;
-
-      const name =
-        p.name || "Product";
-
-      const price =
-        Number(p.price || 0);
-
-      const stock =
-        Number(
-          p.stock === undefined
-            ? 1
-            : p.stock
-        );
-
-      return `
-        <div class="card">
-
-          <img
-            src="${escapeHTML(productImage(p))}"
-            alt="${escapeHTML(name)}"
-          >
-
-          <h3>${escapeHTML(name)}</h3>
-
-          <div class="price">
-            ₹${price}
-          </div>
-
-          <div class="stock">
-            ${stock > 0
-              ? "Stock Available"
-              : "OUT OF STOCK"}
-          </div>
-
-          ${
-            stock > 0
-            ?
-            `
-            <button
-              class="btn"
-              onclick="addCart(
-                '${id}',
-                ${JSON.stringify(name)},
-                ${price}
-              )"
-            >
-              ADD TO CART
-            </button>
-            `
-            :
-            `
-            <button disabled>
-              OUT OF STOCK
-            </button>
-            `
-          }
-
-        </div>
-      `;
-
-    }).join("");
+  setTimeout(() => {
+    el.classList.remove("show");
+  }, 2200);
 }
-
-function loadLocalProducts() {
-
-  db.collection("products")
-    .where("type", "==", "local")
-    .onSnapshot(
-
-      snapshot => {
-
-        allLocalProducts =
-          snapshot.docs.map(doc => ({
-            id: doc.id,
-            data: doc.data()
-          }));
-
-        renderLocalProducts(
-          allLocalProducts
-        );
-
-      },
-
-      error => {
-
-        console.error(
-          "Products error:",
-          error
-        );
-
-        $("localProducts").innerHTML =
-          "<p>Products load nahi ho paaye.</p>";
-
-      }
-
-    );
-}
-
-function loadAffiliateProducts() {
-
-  db.collection("products")
-    .where("type", "==", "affiliate")
-    .onSnapshot(
-
-      snapshot => {
-
-        const container =
-          $("affiliateProducts");
-
-        if (!container) return;
-
-        if (snapshot.empty) {
-
-          container.innerHTML =
-            "<p>Amazon deals available nahi hain.</p>";
-
-          return;
-        }
-
-        container.innerHTML =
-          snapshot.docs.map(doc => {
-
-            const p = doc.data();
-
-            const name =
-              p.name || "Amazon Product";
-
-            const price =
-              Number(p.price || 0);
-
-            const link =
-              p.link || "#";
-
-            return `
-              <div class="card">
-
-                <img
-                  src="${escapeHTML(productImage(p))}"
-                  alt="${escapeHTML(name)}"
-                >
-
-                <h3>
-                  ${escapeHTML(name)}
-                </h3>
-
-                <div class="price">
-                  ₹${price}
-                </div>
-
-                <button
-                  class="btn"
-                  onclick="window.open(
-                    ${JSON.stringify(link)},
-                    '_blank',
-                    'noopener'
-                  )"
-                >
-                  BUY ON AMAZON
-                </button>
-
-              </div>
-            `;
-
-          }).join("");
-
-      },
-
-      error => {
-
-        console.error(
-          "Affiliate error:",
-          error
-        );
-
-      }
-
-    );
-}
-
-// ======================================================
-// CATEGORY
-// ======================================================
-
-function filterCategory(category) {
-
-  const filtered =
-    allLocalProducts.filter(item => {
-
-      const p = item.data;
-
-      return String(
-        p.category || ""
-      ).toLowerCase() ===
-      category.toLowerCase();
-
-    });
-
-  renderLocalProducts(filtered);
-
-  window.scrollTo({
-    top: $("localProducts").offsetTop - 70,
-    behavior: "smooth"
-  });
-}
-
-// ======================================================
-// SEARCH
-// ======================================================
-
-function searchProducts() {
-
-  const value =
-    $("search").value
-      .trim()
-      .toLowerCase();
-
-  if (!value) {
-
-    renderLocalProducts(
-      allLocalProducts
-    );
-
-    return;
-  }
-
-  const filtered =
-    allLocalProducts.filter(item => {
-
-      const p = item.data;
-
-      return (
-        String(p.name || "")
-          .toLowerCase()
-          .includes(value)
-        ||
-        String(p.category || "")
-          .toLowerCase()
-          .includes(value)
-      );
-
-    });
-
-  renderLocalProducts(filtered);
-}
-
-// ======================================================
-// CART
-// ======================================================
 
 function saveCart() {
 
@@ -453,120 +79,453 @@ function saveCart() {
     JSON.stringify(cart)
   );
 
-}
-
-function addCart(id, name, price) {
-
-  cart.push({
-    id,
-    name,
-    price: Number(price)
-  });
-
-  saveCart();
   updateCartUI();
-
-  alert(
-    name +
-    " Cart me add ho gaya ✅"
-  );
-}
-
-function removeCart(index) {
-
-  cart.splice(index, 1);
-
-  saveCart();
-  updateCartUI();
-}
-
-function toggleCart() {
-
-  $("cartBox").scrollIntoView({
-    behavior: "smooth"
-  });
-
 }
 
 function updateCartUI() {
 
-  const count = $("cartCount");
-  const total = $("cartTotal");
-  const items = $("cartItems");
-
-  if (count) {
-
-    count.innerText =
+  if ($("cartCount")) {
+    $("cartCount").textContent =
       cart.length;
+  }
+
+  if ($("cartTotal")) {
+
+    $("cartTotal").textContent =
+      cart.reduce(
+        (s,x) =>
+          s + Number(x.price || 0),
+        0
+      ).toLocaleString("en-IN");
 
   }
 
-  if (total) {
+  if ($("cartItems")) {
 
-    total.innerText =
-      cart.reduce(
-        (sum, item) =>
-          sum + Number(item.price || 0),
-        0
+    $("cartItems").innerHTML =
+      cart.length
+
+      ? cart.map((item,index) => `
+          <div class="cart-row">
+
+            <span>
+              ${esc(item.name)}
+
+              <small>
+                ${money(item.price)}
+              </small>
+            </span>
+
+            <button
+              class="danger"
+              data-remove="${index}">
+              ×
+            </button>
+
+          </div>
+        `).join("")
+
+      : "<p>Cart khali hai.</p>";
+  }
+}
+
+function addCart(id,name,price) {
+
+  cart.push({
+    id,
+    name,
+    price:Number(price || 0)
+  });
+
+  saveCart();
+
+  toast(
+    name +
+    " cart me add ho gaya ✅"
+  );
+
+}
+
+window.addCart = addCart;
+
+function removeCart(index) {
+
+  cart.splice(index,1);
+
+  saveCart();
+}
+
+window.removeCart = removeCart;
+
+function toggleCart(force) {
+
+  const box = $("cartBox");
+
+  if (!box) return;
+
+  if (force === undefined) {
+
+    box.classList.toggle("hidden");
+
+  } else {
+
+    box.classList.toggle(
+      "hidden",
+      !force
+    );
+
+  }
+
+}
+
+window.toggleCart = toggleCart;
+
+async function setupRecaptcha() {
+
+  if (!$("recaptcha")) return;
+
+  if (recaptchaVerifier) return;
+
+  recaptchaVerifier =
+    new RecaptchaVerifier(
+      auth,
+      "recaptcha",
+      {
+        size:"invisible"
+      }
+    );
+
+  await recaptchaVerifier.render();
+}
+
+async function sendOTP() {
+
+  const phone =
+    $("phone")?.value.trim();
+
+  if (!phone) {
+    return toast(
+      "Mobile number daalo."
+    );
+  }
+
+  if (!phone.startsWith("+")) {
+    return toast(
+      "Country code ke saath number daalo."
+    );
+  }
+
+  try {
+
+    await setupRecaptcha();
+
+    confirmationResult =
+      await signInWithPhoneNumber(
+        auth,
+        phone,
+        recaptchaVerifier
       );
 
+    toast("OTP bhej diya ✅");
+
+  } catch(error) {
+
+    console.error(error);
+
+    toast(
+      error.message
+    );
+
+  }
+}
+
+window.sendOTP = sendOTP;
+
+async function verifyOTP() {
+
+  if (!confirmationResult) {
+    return toast(
+      "Pehle OTP bhejo."
+    );
   }
 
-  if (!items) return;
+  const otp =
+    $("otp")?.value.trim();
 
-  if (!cart.length) {
+  if (!otp) {
+    return toast(
+      "OTP daalo."
+    );
+  }
 
-    items.innerHTML =
-      "<p>Cart khali hai.</p>";
+  try {
+
+    await confirmationResult.confirm(
+      otp
+    );
+
+    $("loginBox")
+      ?.classList.add("hidden");
+
+    toast(
+      "Login ho gaya ✅"
+    );
+
+  } catch(error) {
+
+    toast(
+      "Galat OTP ❌"
+    );
+
+  }
+}
+
+window.verifyOTP = verifyOTP;
+
+function renderProducts(
+  docs,
+  containerId,
+  affiliate = false
+) {
+
+  const container =
+    $(containerId);
+
+  if (!container) return;
+
+  if (!docs.length) {
+
+    container.innerHTML =
+      "<p>Products available nahi hain.</p>";
 
     return;
   }
 
-  items.innerHTML =
-    cart.map((item, index) => {
+  container.innerHTML =
+    docs.map(d => {
+
+      const p = d.data();
+
+      const name =
+        p.name || "Product";
+
+      const price =
+        Number(p.price || 0);
+
+      const image =
+        p.photo ||
+        p.image ||
+        "https://via.placeholder.com/600x400?text=Product";
+
+      if (affiliate) {
+
+        return `
+          <article class="card">
+
+            <img
+              src="${esc(image)}"
+              alt="${esc(name)}">
+
+            <div class="card-body">
+
+              <h3>
+                ${esc(name)}
+              </h3>
+
+              <b>
+                ${money(price)}
+              </b>
+
+              <button
+                class="primary"
+                data-buy="${esc(p.link || "#")}">
+                BUY ON AMAZON
+              </button>
+
+            </div>
+
+          </article>
+        `;
+
+      }
+
+      const stock =
+        Number(p.stock ?? 1);
 
       return `
-        <div style="
-          display:flex;
-          justify-content:space-between;
-          align-items:center;
-          gap:10px;
-          padding:10px 0;
-          border-bottom:1px solid #ddd;
-        ">
+        <article class="card">
 
-          <span>
-            ${escapeHTML(item.name)}
-            - ₹${Number(item.price)}
-          </span>
+          <img
+            src="${esc(image)}"
+            alt="${esc(name)}">
 
-          <button
-            onclick="removeCart(${index})"
-            style="
-              background:red;
-              color:white;
-            "
-          >
-            X
-          </button>
+          <div class="card-body">
 
-        </div>
+            <h3>
+              ${esc(name)}
+            </h3>
+
+            <b>
+              ${money(price)}
+            </b>
+
+            ${
+              stock <= 0
+
+              ? `
+                <button
+                  disabled
+                  style="width:100%;margin-top:12px">
+                  OUT OF STOCK
+                </button>
+              `
+
+              : `
+                <button
+                  class="primary"
+                  data-add="${esc(d.id)}"
+                  data-name="${esc(name)}"
+                  data-price="${price}">
+                  ADD TO CART
+                </button>
+              `
+            }
+
+          </div>
+
+        </article>
       `;
 
     }).join("");
 }
 
-// ======================================================
-// COD ORDER
-// ======================================================
+function loadLocalProducts() {
+
+  onSnapshot(
+    query(
+      collection(db,"products"),
+      where("type","==","local")
+    ),
+    snapshot => {
+
+      renderProducts(
+        snapshot.docs,
+        "localProducts"
+      );
+
+    },
+    console.error
+  );
+}
+
+function loadAffiliateProducts() {
+
+  onSnapshot(
+    query(
+      collection(db,"products"),
+      where("type","==","affiliate")
+    ),
+    snapshot => {
+
+      renderProducts(
+        snapshot.docs,
+        "affiliateProducts",
+        true
+      );
+
+    },
+    console.error
+  );
+}
+
+function loadMainBanner() {
+
+  if (!$("mainBanner")) return;
+
+  onSnapshot(
+    doc(db,"banner","main"),
+    snapshot => {
+
+      if (
+        snapshot.exists() &&
+        snapshot.data().url
+      ) {
+
+        $("mainBanner")
+          .style
+          .backgroundImage =
+          `url("${snapshot.data().url}")`;
+
+      }
+
+    },
+    console.error
+  );
+}
+
+let searchTimer = null;
+
+function searchProducts() {
+
+  clearTimeout(searchTimer);
+
+  searchTimer =
+    setTimeout(async () => {
+
+      const value =
+        $("search")
+          ?.value
+          .trim()
+          .toLowerCase();
+
+      if (!value) {
+
+        loadLocalProducts();
+
+        return;
+      }
+
+      const snapshot =
+        await getDocs(
+          query(
+            collection(db,"products"),
+            where(
+              "type",
+              "==",
+              "local"
+            )
+          )
+        );
+
+      const filtered =
+        snapshot.docs.filter(d => {
+
+          return String(
+            d.data().name || ""
+          )
+          .toLowerCase()
+          .includes(value);
+
+        });
+
+      renderProducts(
+        filtered,
+        "localProducts"
+      );
+
+    },300);
+
+}
+
+window.searchProducts =
+  searchProducts;
 
 async function placeOrder() {
 
   if (!cart.length) {
-
-    alert("Cart khali hai ❌");
-    return;
-
+    return toast(
+      "Cart khali hai ❌"
+    );
   }
 
   const user =
@@ -574,39 +533,33 @@ async function placeOrder() {
 
   if (!user) {
 
-    alert(
-      "Order place karne ke liye pehle login karo."
+    $("loginBox")
+      ?.classList.remove(
+        "hidden"
+      );
+
+    return toast(
+      "Pehle OTP login karo."
     );
-
-    openLogin();
-    return;
-
-  }
-
-  const phone =
-    prompt(
-      "Delivery mobile number daalo",
-      user.phoneNumber || ""
-    );
-
-  if (!phone) {
-
-    alert("Mobile number required hai");
-    return;
-
   }
 
   const address =
-    prompt(
-      "Complete delivery address daalo"
-    );
+    $("address")
+      ?.value
+      .trim();
 
   if (!address) {
-
-    alert("Address required hai");
-    return;
-
+    return toast(
+      "Address daalo."
+    );
   }
+
+  const total =
+    cart.reduce(
+      (s,x) =>
+        s + Number(x.price || 0),
+      0
+    );
 
   const deliveryOTP =
     String(
@@ -616,56 +569,37 @@ async function placeOrder() {
       )
     );
 
-  const total =
-    cart.reduce(
-      (sum, item) =>
-        sum + Number(item.price || 0),
-      0
-    );
-
   try {
 
-    const orderData = {
-
-      customerId: user.uid,
-
-      customerPhone:
-        user.phoneNumber || "",
-
-      phone,
-
-      address,
-
-      items: cart,
-
-      total,
-
-      paymentMethod: "COD",
-
-      status: "NEW",
-
-      deliveryOTP,
-
-      createdAt:
-        firebase.firestore
-          .FieldValue
-          .serverTimestamp()
-
-    };
-
     const ref =
-      await db
-        .collection("orders")
-        .add(orderData);
+      await addDoc(
+        collection(
+          db,
+          "orders"
+        ),
+        {
+          userId:user.uid,
+          phone:user.phoneNumber || "",
+          address,
+          items:cart,
+          total,
+          paymentMethod:"COD",
+          status:"NEW",
+          deliveryOTP,
+          createdAt:
+            serverTimestamp()
+        }
+      );
 
     cart = [];
 
     saveCart();
-    updateCartUI();
+
+    toggleCart(false);
 
     alert(
-      "ORDER SUCCESSFULLY PLACE HO GAYA ✅\n\n" +
-      "Payment: CASH ON DELIVERY\n\n" +
+      "Order Successfully Place Ho Gaya ✅\n\n" +
+      "Payment: CASH ON DELIVERY\n" +
       "Order ID: " +
       ref.id +
       "\n\n" +
@@ -673,121 +607,185 @@ async function placeOrder() {
       deliveryOTP
     );
 
-  } catch (error) {
+  } catch(error) {
 
     console.error(error);
 
-    alert(
-      "Order place nahi hua ❌\n" +
+    toast(
+      "Order failed: " +
       error.message
     );
 
   }
 }
 
-// ======================================================
-// BANNER
-// ======================================================
+window.placeOrder = placeOrder;
+window.placeCODOrder = placeOrder;
 
-function loadMainBanner() {
+onAuthStateChanged(
+  auth,
+  user => {
 
-  const banner =
-    $("mainBanner");
+    const status =
+      $("loginStatus");
 
-  if (!banner) return;
+    if (status) {
 
-  db.collection("banner")
-    .doc("main")
-    .onSnapshot(
+      status.textContent =
+        user
+          ? "Logged in"
+          : "Guest";
 
-      doc => {
+    }
 
-        if (!doc.exists) return;
+  }
+);
 
-        const data =
-          doc.data();
+document.addEventListener(
+  "click",
+  event => {
 
-        if (data.url) {
+    const add =
+      event.target.closest(
+        "[data-add]"
+      );
 
-          banner.style.backgroundImage =
-            `url("${data.url}")`;
+    if (add) {
 
-        }
+      addCart(
+        add.dataset.add,
+        add.dataset.name,
+        add.dataset.price
+      );
 
-      },
+      return;
+    }
 
-      error => {
+    const remove =
+      event.target.closest(
+        "[data-remove]"
+      );
 
-        console.error(
-          "Banner error:",
-          error
+    if (remove) {
+
+      removeCart(
+        Number(
+          remove.dataset.remove
+        )
+      );
+
+      return;
+    }
+
+    const buy =
+      event.target.closest(
+        "[data-buy]"
+      );
+
+    if (
+      buy &&
+      buy.dataset.buy !== "#"
+    ) {
+
+      window.open(
+        buy.dataset.buy,
+        "_blank",
+        "noopener,noreferrer"
+      );
+
+      return;
+    }
+
+    if (
+      event.target.closest(
+        "[data-cart]"
+      )
+    ) {
+
+      toggleCart();
+
+      return;
+    }
+
+    if (
+      event.target.closest(
+        "[data-login]"
+      )
+    ) {
+
+      $("loginBox")
+        ?.classList.remove(
+          "hidden"
         );
 
-      }
+      return;
+    }
 
-    );
-}
+    if (
+      event.target.closest(
+        "[data-close-login]"
+      )
+    ) {
 
-// ======================================================
-// TIMER
-// ======================================================
+      $("loginBox")
+        ?.classList.add(
+          "hidden"
+        );
 
-setInterval(() => {
-
-  if (timerSeconds <= 0) {
-
-    timerSeconds = 10799;
-
-  }
-
-  timerSeconds--;
-
-  const h =
-    Math.floor(
-      timerSeconds / 3600
-    );
-
-  const m =
-    Math.floor(
-      (timerSeconds % 3600) / 60
-    );
-
-  const s =
-    timerSeconds % 60;
-
-  if ($("timer")) {
-
-    $("timer").innerText =
-      String(h).padStart(2, "0") +
-      ":" +
-      String(m).padStart(2, "0") +
-      ":" +
-      String(s).padStart(2, "0");
+    }
 
   }
-
-}, 1000);
-
-// ======================================================
-// START
-// ======================================================
+);
 
 document.addEventListener(
   "DOMContentLoaded",
   () => {
 
     updateCartUI();
-    setupRecaptcha();
+
     loadLocalProducts();
+
     loadAffiliateProducts();
+
     loadMainBanner();
+
+    setupRecaptcha()
+      .catch(console.error);
+
+    let time = 10800;
+
+    setInterval(() => {
+
+      time--;
+
+      if (time <= 0) {
+        time = 10800;
+      }
+
+      if ($("timer")) {
+
+        const h =
+          Math.floor(time / 3600);
+
+        const m =
+          Math.floor(
+            (time % 3600) / 60
+          );
+
+        const s =
+          time % 60;
+
+        $("timer").textContent =
+          `${String(h).padStart(2,"0")}:` +
+          `${String(m).padStart(2,"0")}:` +
+          `${String(s).padStart(2,"0")}`;
+
+      }
+
+    },1000);
 
   }
 );
-
-// ======================================================
-// SERVICE WORKER
-// ======================================================
 
 if ("serviceWorker" in navigator) {
 
