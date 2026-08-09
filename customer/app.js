@@ -1,12 +1,10 @@
 // =====================================================
-// AIO DIGITAL MALL - MAIN ROOT APP.JS
-// Firebase + Login + Products + Cart + COD Orders
+// AIO DIGITAL MALL - CUSTOMER APP
+// Firebase + OTP + Products + Cart + COD
 // =====================================================
 
-// ================= FIREBASE CONFIG ====================
-
 const firebaseConfig = {
-  apiKey: "AIzaSyAyH9RRJTEETFh4zHWwCMO4d6qMielJQFA",
+  apiKey: "AIzaSyH9RRJTEETFh4zHWwCMO4d6qMielJQFA",
   authDomain: "aio-digital-mall.firebaseapp.com",
   projectId: "aio-digital-mall",
   storageBucket: "aio-digital-mall.firebasestorage.app",
@@ -15,7 +13,6 @@ const firebaseConfig = {
   measurementId: "G-TNDT9FYNRP"
 };
 
-// Firebase initialize
 if (!firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
 }
@@ -23,23 +20,16 @@ if (!firebase.apps.length) {
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-
-// =====================================================
-// HELPER
-// =====================================================
-
 const $ = id => document.getElementById(id);
 
-
 // =====================================================
-// PHONE OTP LOGIN
+// OTP
 // =====================================================
 
 let confirmationResult = null;
 let recaptchaVerifier = null;
 
 function setupRecaptcha() {
-
   if (!$("recaptcha")) return;
 
   if (recaptchaVerifier) return;
@@ -54,49 +44,51 @@ function setupRecaptcha() {
   recaptchaVerifier.render();
 }
 
+function openLogin() {
+  $("loginModal").style.display = "block";
+  setTimeout(setupRecaptcha, 200);
+}
 
-// Send OTP
+function closeLogin() {
+  $("loginModal").style.display = "none";
+}
+
 function sendOTP() {
-
   setupRecaptcha();
 
-  const phoneNumber = $("phone")?.value.trim();
+  const phone = $("phone").value.trim();
 
-  if (!phoneNumber) {
+  if (!phone) {
     alert("Mobile number daalo");
     return;
   }
 
-  if (!phoneNumber.startsWith("+")) {
-    alert("Number country code ke saath daalo.\nExample: +919876543210");
+  if (!phone.startsWith("+")) {
+    alert("Country code ke saath number daalo.\nExample: +919876543210");
     return;
   }
 
   auth.signInWithPhoneNumber(
-    phoneNumber,
+    phone,
     recaptchaVerifier
   )
   .then(result => {
-
     confirmationResult = result;
-
     alert("OTP Bhej diya ✅");
-
   })
   .catch(error => {
-
     console.error(error);
+    alert("OTP Error: " + error.message);
 
-    alert("OTP error: " + error.message);
-
+    if (recaptchaVerifier) {
+      recaptchaVerifier.clear();
+      recaptchaVerifier = null;
+    }
   });
 }
 
-
-// Verify OTP
 function verifyOTP() {
-
-  const otp = $("otp")?.value.trim();
+  const otp = $("otp").value.trim();
 
   if (!confirmationResult) {
     alert("Pehle OTP bhejo");
@@ -110,48 +102,148 @@ function verifyOTP() {
 
   confirmationResult.confirm(otp)
     .then(result => {
-
-      console.log("Logged in:", result.user);
-
       alert("Login Ho Gaya ✅");
+      closeLogin();
 
-      if ($("loginBox")) {
-        $("loginBox").style.display = "none";
-      }
-
+      console.log(
+        "Customer:",
+        result.user.phoneNumber || result.user.uid
+      );
     })
     .catch(error => {
-
       console.error(error);
-
       alert("Galat OTP ❌");
-
     });
 }
 
-
-// Auth state
 auth.onAuthStateChanged(user => {
-
   if (user) {
-
     console.log(
-      "Customer Login:",
+      "Customer Logged In:",
       user.phoneNumber || user.uid
     );
-
-  } else {
-
-    console.log("Customer Not Logged In");
-
   }
-
 });
 
+// =====================================================
+// ESCAPE
+// =====================================================
+
+function escapeHTML(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
 
 // =====================================================
-// PRODUCT RENDER
+// CART
 // =====================================================
+
+let cart = [];
+
+try {
+  cart = JSON.parse(
+    localStorage.getItem("aio_digital_mall_cart")
+  ) || [];
+} catch {
+  cart = [];
+}
+
+function saveCart() {
+  localStorage.setItem(
+    "aio_digital_mall_cart",
+    JSON.stringify(cart)
+  );
+
+  updateCartUI();
+}
+
+function addCart(id, name, price) {
+
+  cart.push({
+    id: id,
+    name: name,
+    price: Number(price || 0)
+  });
+
+  saveCart();
+
+  alert(name + " Cart me add ho gaya ✅");
+}
+
+function removeCart(index) {
+  cart.splice(index, 1);
+  saveCart();
+}
+
+function updateCartUI() {
+
+  const count = $("cartCount");
+  const total = $("cartTotal");
+  const items = $("cartItems");
+
+  if (count) {
+    count.innerText = cart.length;
+  }
+
+  const totalValue = cart.reduce(
+    (sum, item) =>
+      sum + Number(item.price || 0),
+    0
+  );
+
+  if (total) {
+    total.innerText = totalValue;
+  }
+
+  if (!items) return;
+
+  if (cart.length === 0) {
+    items.innerHTML = "<p>Cart khali hai.</p>";
+    return;
+  }
+
+  items.innerHTML = cart.map(
+    (item, index) => `
+      <div class="cartItem">
+        <span>
+          ${escapeHTML(item.name)}
+          <br>
+          ₹${Number(item.price)}
+        </span>
+
+        <button
+          class="danger"
+          onclick="removeCart(${index})"
+        >
+          X
+        </button>
+      </div>
+    `
+  ).join("");
+}
+
+function openCart() {
+  updateCartUI();
+  $("cartModal").style.display = "block";
+}
+
+function closeCart() {
+  $("cartModal").style.display = "none";
+}
+
+// =====================================================
+// PRODUCTS
+// =====================================================
+
+function productImage(p) {
+  return p.photo ||
+         p.image ||
+         "https://via.placeholder.com/500x400?text=AIO+PRODUCT";
+}
 
 function renderLocalProducts(snapshot) {
 
@@ -160,10 +252,8 @@ function renderLocalProducts(snapshot) {
   if (!container) return;
 
   if (snapshot.empty) {
-
     container.innerHTML =
-      "<p style='padding:10px'>Abhi local products available nahi hain.</p>";
-
+      "<p>Abhi local products available nahi hain.</p>";
     return;
   }
 
@@ -171,38 +261,47 @@ function renderLocalProducts(snapshot) {
 
     const p = doc.data();
 
-    const photo =
-      p.photo ||
-      p.image ||
-      "https://via.placeholder.com/300x200?text=Product";
+    const name = p.name || "Product";
+    const price = Number(p.price || 0);
+    const photo = productImage(p);
 
-    const name =
-      p.name || "Product";
-
-    const price =
-      Number(p.price || 0);
+    const out =
+      Number(p.stock) === 0;
 
     return `
       <div class="card">
 
         <img
-          src="${photo}"
+          src="${escapeHTML(photo)}"
           alt="${escapeHTML(name)}"
         >
 
-        <h4>${escapeHTML(name)}</h4>
+        <h3>${escapeHTML(name)}</h3>
 
-        <p>₹${price}</p>
+        <div class="price">
+          ₹${price}
+        </div>
 
         ${
-          p.stock === 0
-          ? `<button class="btn" disabled>OUT OF STOCK</button>`
-          : `<button
-              class="btn"
-              onclick="addCart('${doc.id}', '${escapeJS(name)}', ${price})"
-            >
-              ADD TO CART
-            </button>`
+          out
+          ?
+          `
+          <button class="out" disabled>
+            OUT OF STOCK
+          </button>
+          `
+          :
+          `
+          <button
+            onclick="addCart(
+              '${doc.id}',
+              ${JSON.stringify(name)},
+              ${price}
+            )"
+          >
+            ADD TO CART
+          </button>
+          `
         }
 
       </div>
@@ -211,11 +310,6 @@ function renderLocalProducts(snapshot) {
   }).join("");
 }
 
-
-// =====================================================
-// AFFILIATE PRODUCTS
-// =====================================================
-
 function renderAffiliateProducts(snapshot) {
 
   const container = $("affiliateProducts");
@@ -223,10 +317,8 @@ function renderAffiliateProducts(snapshot) {
   if (!container) return;
 
   if (snapshot.empty) {
-
     container.innerHTML =
-      "<p style='padding:10px'>Amazon deals abhi available nahi hain.</p>";
-
+      "<p>Amazon deals available nahi hain.</p>";
     return;
   }
 
@@ -234,35 +326,30 @@ function renderAffiliateProducts(snapshot) {
 
     const p = doc.data();
 
-    const photo =
-      p.photo ||
-      p.image ||
-      "https://via.placeholder.com/300x200?text=Amazon";
-
-    const name =
-      p.name || "Amazon Product";
-
-    const price =
-      Number(p.price || 0);
-
-    const link =
-      p.link || "#";
+    const name = p.name || "Amazon Product";
+    const price = Number(p.price || 0);
+    const photo = productImage(p);
+    const link = p.link || "#";
 
     return `
-      <div class="card affiliate">
+      <div class="card">
 
         <img
-          src="${photo}"
+          src="${escapeHTML(photo)}"
           alt="${escapeHTML(name)}"
         >
 
-        <h4>${escapeHTML(name)}</h4>
+        <h3>${escapeHTML(name)}</h3>
 
-        <p>₹${price}</p>
+        <div class="price">
+          ₹${price}
+        </div>
 
         <button
-          class="btn"
-          onclick="window.open('${escapeJS(link)}','_blank')"
+          onclick="window.open(
+            ${JSON.stringify(link)},
+            '_blank'
+          )"
         >
           BUY ON AMAZON
         </button>
@@ -273,365 +360,53 @@ function renderAffiliateProducts(snapshot) {
   }).join("");
 }
 
+// =====================================================
+// LOAD PRODUCTS
+// =====================================================
 
-// =====================================================
-// LOAD LOCAL PRODUCTS
-// =====================================================
+let localUnsubscribe = null;
 
 function loadLocalProducts() {
 
-  db.collection("products")
-    .where("type", "==", "local")
-    .onSnapshot(
+  if (localUnsubscribe) {
+    localUnsubscribe();
+  }
 
-      snapshot => {
+  localUnsubscribe =
+    db.collection("products")
+      .where("type", "==", "local")
+      .onSnapshot(
+        snapshot => {
+          renderLocalProducts(snapshot);
+        },
+        error => {
+          console.error(
+            "Local Products:",
+            error
+          );
 
-        renderLocalProducts(snapshot);
-
-      },
-
-      error => {
-
-        console.error("Local product error:", error);
-
-      }
-
-    );
+          $("localProducts").innerHTML =
+            "<p>Products load nahi ho paaye.</p>";
+        }
+      );
 }
-
-
-// =====================================================
-// LOAD AFFILIATE PRODUCTS
-// =====================================================
 
 function loadAffiliateProducts() {
 
   db.collection("products")
     .where("type", "==", "affiliate")
     .onSnapshot(
-
       snapshot => {
-
         renderAffiliateProducts(snapshot);
-
       },
-
       error => {
-
-        console.error("Affiliate product error:", error);
-
+        console.error(
+          "Affiliate Products:",
+          error
+        );
       }
-
     );
 }
-
-
-// =====================================================
-// BANNER
-// =====================================================
-
-function loadMainBanner() {
-
-  if (!$("mainBanner")) return;
-
-  db.collection("banner")
-    .doc("main")
-    .onSnapshot(
-
-      doc => {
-
-        if (doc.exists) {
-
-          const data = doc.data();
-
-          if (data.url) {
-
-            $("mainBanner").style.backgroundImage =
-              `url("${data.url}")`;
-
-          }
-
-        }
-
-      },
-
-      error => {
-
-        console.error("Banner error:", error);
-
-      }
-
-    );
-}
-
-
-// =====================================================
-// CART
-// =====================================================
-
-let cart =
-  JSON.parse(
-    localStorage.getItem("aio_cart")
-  ) || [];
-
-
-// Update cart UI
-function updateCartUI() {
-
-  const count = $("cartCount");
-  const total = $("cartTotal");
-  const items = $("cartItems");
-
-  if (count) {
-
-    count.innerText = cart.length;
-
-  }
-
-  if (total) {
-
-    total.innerText =
-      cart.reduce(
-        (sum, item) =>
-          sum + Number(item.price || 0),
-        0
-      );
-
-  }
-
-  if (items) {
-
-    if (cart.length === 0) {
-
-      items.innerHTML =
-        "<p>Cart khali hai.</p>";
-
-      return;
-
-    }
-
-    items.innerHTML =
-      cart.map((item, index) => {
-
-        return `
-          <div style="
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            padding:8px;
-            border-bottom:1px solid #ddd;
-          ">
-
-            <span>
-              ${escapeHTML(item.name)}
-              - ₹${Number(item.price)}
-            </span>
-
-            <button
-              onclick="removeCart(${index})"
-              style="
-                background:red;
-                color:white;
-                border:none;
-                padding:5px 8px;
-                border-radius:5px;
-              "
-            >
-              X
-            </button>
-
-          </div>
-        `;
-
-      }).join("");
-
-  }
-
-}
-
-
-// Add product
-function addCart(id, name, price) {
-
-  cart.push({
-
-    id: id,
-
-    name: name,
-
-    price: Number(price)
-
-  });
-
-  localStorage.setItem(
-    "aio_cart",
-    JSON.stringify(cart)
-  );
-
-  updateCartUI();
-
-  alert(
-    name + " Cart me add ho gaya ✅"
-  );
-
-}
-
-
-// Remove product
-function removeCart(index) {
-
-  cart.splice(index, 1);
-
-  localStorage.setItem(
-    "aio_cart",
-    JSON.stringify(cart)
-  );
-
-  updateCartUI();
-
-}
-
-
-// =====================================================
-// COD ORDER
-// =====================================================
-
-async function placeOrder() {
-
-  if (cart.length === 0) {
-
-    alert("Cart khali hai ❌");
-
-    return;
-
-  }
-
-  const phone =
-    prompt(
-      "Mobile number daalo"
-    );
-
-  if (!phone) {
-
-    alert("Mobile number required hai");
-
-    return;
-
-  }
-
-  const address =
-    prompt(
-      "Complete delivery address daalo"
-    );
-
-  if (!address) {
-
-    alert("Address required hai");
-
-    return;
-
-  }
-
-
-  // COD only
-  const paymentMethod = "COD";
-
-  const deliveryOTP =
-    Math.floor(
-      1000 +
-      Math.random() * 9000
-    ).toString();
-
-
-  const total =
-    cart.reduce(
-      (sum, item) =>
-        sum + Number(item.price || 0),
-      0
-    );
-
-
-  try {
-
-    const orderData = {
-
-      items: cart,
-
-      phone: phone,
-
-      address: address,
-
-      total: total,
-
-      paymentMethod: paymentMethod,
-
-      status: "NEW",
-
-      deliveryOTP: deliveryOTP,
-
-      createdAt:
-        firebase.firestore.FieldValue.serverTimestamp()
-
-    };
-
-
-    const orderRef =
-      await db
-        .collection("orders")
-        .add(orderData);
-
-
-    console.log(
-      "Order ID:",
-      orderRef.id
-    );
-
-
-    // Clear cart
-    cart = [];
-
-    localStorage.removeItem(
-      "aio_cart"
-    );
-
-    updateCartUI();
-
-
-    alert(
-      "Order Successfully Place Ho Gaya ✅\n\n" +
-      "Payment: CASH ON DELIVERY\n" +
-      "Order ID: " +
-      orderRef.id +
-      "\n\n" +
-      "Delivery OTP: " +
-      deliveryOTP
-    );
-
-
-    if ($("cartBox")) {
-
-      $("cartBox").style.display =
-        "none";
-
-    }
-
-  }
-  catch (error) {
-
-    console.error(
-      "Order error:",
-      error
-    );
-
-    alert(
-      "Order place nahi hua ❌\n" +
-      error.message
-    );
-
-  }
-
-}
-
 
 // =====================================================
 // SEARCH
@@ -643,128 +418,211 @@ function searchProducts() {
 
   clearTimeout(searchTimer);
 
-  searchTimer =
-    setTimeout(() => {
+  searchTimer = setTimeout(() => {
 
-      const input =
-        $("search");
+    const value =
+      $("search").value
+        .trim()
+        .toLowerCase();
 
-      if (!input) return;
+    if (!value) {
+      loadLocalProducts();
+      return;
+    }
 
-      const value =
-        input.value
-          .trim()
-          .toLowerCase();
+    db.collection("products")
+      .where("type", "==", "local")
+      .get()
+      .then(snapshot => {
 
+        const filtered =
+          snapshot.docs.filter(doc => {
 
-      if (!value) {
+            const p = doc.data();
 
-        loadLocalProducts();
+            const name =
+              String(p.name || "")
+                .toLowerCase();
 
-        return;
+            const category =
+              String(p.category || "")
+                .toLowerCase();
 
-      }
+            return (
+              name.includes(value) ||
+              category.includes(value)
+            );
+          });
 
+        if (!filtered.length) {
+          $("localProducts").innerHTML =
+            "<p>Product nahi mila.</p>";
+          return;
+        }
 
-      db.collection("products")
-        .where("type", "==", "local")
-        .get()
-        .then(snapshot => {
-
-          const container =
-            $("localProducts");
-
-          if (!container) return;
-
-          const filtered =
-            snapshot.docs.filter(doc => {
-
-              const data =
-                doc.data();
-
-              const name =
-                String(
-                  data.name || ""
-                ).toLowerCase();
-
-              return name.includes(value);
-
-            });
-
-
-          if (filtered.length === 0) {
-
-            container.innerHTML =
-              "<p style='padding:10px'>Product nahi mila.</p>";
-
-            return;
-
-          }
-
-
-          container.innerHTML =
-            filtered.map(doc => {
-
-              const p =
-                doc.data();
-
-              const photo =
-                p.photo ||
-                p.image ||
-                "https://via.placeholder.com/300x200?text=Product";
-
-              const name =
-                p.name || "Product";
-
-              const price =
-                Number(p.price || 0);
-
-
-              return `
-                <div class="card">
-
-                  <img
-                    src="${photo}"
-                    alt="${escapeHTML(name)}"
-                  >
-
-                  <h4>${escapeHTML(name)}</h4>
-
-                  <p>₹${price}</p>
-
-                  <button
-                    class="btn"
-                    onclick="addCart(
-                      '${doc.id}',
-                      '${escapeJS(name)}',
-                      ${price}
-                    )"
-                  >
-                    ADD TO CART
-                  </button>
-
-                </div>
-              `;
-
-            }).join("");
-
-        })
-        .catch(error => {
-
-          console.error(
-            "Search error:",
-            error
-          );
-
+        renderLocalProducts({
+          empty: false,
+          docs: filtered
         });
 
-    }, 300);
+      })
+      .catch(error => {
+        console.error(
+          "Search:",
+          error
+        );
+      });
 
+  }, 250);
 }
 
+// =====================================================
+// BANNER
+// =====================================================
+
+function loadMainBanner() {
+
+  db.collection("banner")
+    .doc("main")
+    .onSnapshot(
+      doc => {
+
+        if (!doc.exists) return;
+
+        const data = doc.data();
+
+        if (data.url) {
+          $("mainBanner").style.backgroundImage =
+            `url("${data.url}")`;
+        }
+
+      },
+      error => {
+        console.error(
+          "Banner:",
+          error
+        );
+      }
+    );
+}
 
 // =====================================================
-// FLASH SALE TIMER
+// COD ORDER
+// =====================================================
+
+async function placeCODOrder() {
+
+  if (!cart.length) {
+    alert("Cart khali hai ❌");
+    return;
+  }
+
+  const user = auth.currentUser;
+
+  if (!user) {
+    alert("Pehle mobile OTP se login karo.");
+    openLogin();
+    return;
+  }
+
+  const address = prompt(
+    "Complete delivery address daalo"
+  );
+
+  if (!address || address.trim().length < 10) {
+    alert("Complete address required hai.");
+    return;
+  }
+
+  const phone =
+    user.phoneNumber ||
+    prompt("Mobile number daalo");
+
+  if (!phone) {
+    alert("Mobile number required hai.");
+    return;
+  }
+
+  const total = cart.reduce(
+    (sum, item) =>
+      sum + Number(item.price || 0),
+    0
+  );
+
+  const deliveryOTP =
+    Math.floor(
+      1000 + Math.random() * 9000
+    ).toString();
+
+  const orderData = {
+
+    customerUid: user.uid,
+
+    customerPhone: phone,
+
+    items: cart,
+
+    total: total,
+
+    address: address.trim(),
+
+    paymentMethod: "COD",
+
+    status: "NEW",
+
+    deliveryOTP: deliveryOTP,
+
+    createdAt:
+      firebase.firestore.FieldValue
+        .serverTimestamp()
+  };
+
+  try {
+
+    const orderRef =
+      await db
+        .collection("orders")
+        .add(orderData);
+
+    cart = [];
+
+    localStorage.removeItem(
+      "aio_digital_mall_cart"
+    );
+
+    updateCartUI();
+
+    closeCart();
+
+    alert(
+      "ORDER SUCCESSFULLY PLACED ✅\n\n" +
+      "Payment: CASH ON DELIVERY\n\n" +
+      "Order ID:\n" +
+      orderRef.id +
+      "\n\n" +
+      "Delivery OTP:\n" +
+      deliveryOTP
+    );
+
+  } catch (error) {
+
+    console.error(
+      "Order:",
+      error
+    );
+
+    alert(
+      "Order place nahi hua ❌\n\n" +
+      error.message
+    );
+  }
+}
+
+// Compatibility
+window.placeOrder = placeCODOrder;
+
+// =====================================================
+// FLASH TIMER
 // =====================================================
 
 let time = 10799;
@@ -773,18 +631,14 @@ setInterval(() => {
 
   if (!$("timer")) return;
 
-  if (time <= 0) {
-
-    time = 10799;
-
-  }
-
   time--;
 
+  if (time <= 0) {
+    time = 10799;
+  }
+
   const h =
-    Math.floor(
-      time / 3600
-    );
+    Math.floor(time / 3600);
 
   const m =
     Math.floor(
@@ -794,41 +648,14 @@ setInterval(() => {
   const s =
     time % 60;
 
-
   $("timer").innerText =
-    `${String(h).padStart(2, "0")}:` +
-    `${String(m).padStart(2, "0")}:` +
-    `${String(s).padStart(2, "0")}`;
+    String(h).padStart(2, "0") +
+    ":" +
+    String(m).padStart(2, "0") +
+    ":" +
+    String(s).padStart(2, "0");
 
 }, 1000);
-
-
-// =====================================================
-// HTML SAFETY HELPERS
-// =====================================================
-
-function escapeHTML(value) {
-
-  return String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-
-}
-
-
-function escapeJS(value) {
-
-  return String(value)
-    .replace(/\\/g, "\\\\")
-    .replace(/'/g, "\\'")
-    .replace(/\n/g, "\\n")
-    .replace(/\r/g, "");
-
-}
-
 
 // =====================================================
 // SERVICE WORKER
@@ -836,29 +663,30 @@ function escapeJS(value) {
 
 if ("serviceWorker" in navigator) {
 
-  navigator.serviceWorker
-    .register("sw.js")
-    .then(() => {
+  window.addEventListener(
+    "load",
+    () => {
 
-      console.log(
-        "Service Worker registered ✅"
-      );
+      navigator.serviceWorker
+        .register("sw.js")
+        .then(() => {
+          console.log(
+            "Customer Service Worker OK"
+          );
+        })
+        .catch(error => {
+          console.error(
+            "Service Worker:",
+            error
+          );
+        });
 
-    })
-    .catch(error => {
-
-      console.error(
-        "Service Worker error:",
-        error
-      );
-
-    });
-
+    }
+  );
 }
 
-
 // =====================================================
-// START APP
+// START
 // =====================================================
 
 document.addEventListener(
