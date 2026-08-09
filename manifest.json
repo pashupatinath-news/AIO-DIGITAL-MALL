@@ -1,8 +1,20 @@
 {
   "name": "AIO DIGITAL MALL",
-  "short_name": "AIO MALL",
+  "short_name": "AIO Mall",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#FFF8F0",
-  "theme_color": "#FF6600"
+  "theme_color": "#FF6600",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
 }
