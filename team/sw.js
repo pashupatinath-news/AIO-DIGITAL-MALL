@@ -1,6 +1,85 @@
-self.addEventListener('install', e => {
-  e.waitUntil(caches.open('v11').then(c => c.addAll(['index.html','dashboard.html'])));
-});
-self.addEventListener('fetch', e => {
-  e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
-});
+const CACHE_NAME =
+  "aio-digital-mall-team-v1";
+
+const FILES = [
+  "./",
+  "./index.html",
+  "./app.js",
+  "./manifest.json"
+];
+
+self.addEventListener(
+  "install",
+  event => {
+
+    event.waitUntil(
+      caches
+        .open(CACHE_NAME)
+        .then(cache =>
+          cache.addAll(FILES)
+        )
+    );
+
+    self.skipWaiting();
+  }
+);
+
+self.addEventListener(
+  "activate",
+  event => {
+
+    event.waitUntil(
+
+      caches.keys()
+        .then(keys =>
+
+          Promise.all(
+
+            keys
+              .filter(
+                key =>
+                  key !== CACHE_NAME
+              )
+              .map(
+                key =>
+                  caches.delete(key)
+              )
+
+          )
+
+        )
+
+    );
+
+    self.clients.claim();
+  }
+);
+
+self.addEventListener(
+  "fetch",
+  event => {
+
+    if (
+      event.request.method !==
+      "GET"
+    ) {
+      return;
+    }
+
+    event.respondWith(
+
+      caches.match(
+        event.request
+      )
+      .then(cached => {
+
+        return (
+          cached ||
+          fetch(event.request)
+        );
+
+      })
+
+    );
+  }
+);
