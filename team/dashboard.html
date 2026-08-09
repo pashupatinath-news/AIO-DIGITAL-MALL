@@ -1,133 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>AIO DIGITAL MALL TEAM DASHBOARD</title>
-<style>
-body{
- margin:0;
- font-family:Arial;
- background:#111;
- color:white;
-}
-header{
- background:#ff6600;
- padding:15px;
- display:flex;
- justify-content:space-between;
- align-items:center;
-}
-.container{
- padding:15px;
- max-width:1200px;
- margin:auto;
-}
-.cards{
- display:grid;
- grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
- gap:15px;
-}
-.stat{
- background:#222;
- padding:20px;
- border-radius:12px;
-}
-.stat b{
- display:block;
- font-size:30px;
- color:#ff6600;
-}
-button{
- background:#ff6600;
- color:white;
- border:0;
- border-radius:8px;
- padding:10px 15px;
- font-weight:bold;
- cursor:pointer;
-}
-.panel{
- background:#1d1d1d;
- margin-top:20px;
- padding:20px;
- border-radius:12px;
-}
-</style>
+
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1.0">
+
+<title>AIO DIGITAL MALL — Dashboard</title>
+
+<meta
+  http-equiv="refresh"
+  content="0;url=index.html">
+
 </head>
 
 <body>
 
-<header>
-<strong>🚩 AIO DIGITAL MALL</strong>
-<button onclick="logoutTeam()">LOGOUT</button>
-</header>
-
-<div class="container">
-
-<h1>Team Dashboard</h1>
-
-<div class="cards">
-
-<div class="stat">
-Orders
-<b id="ordersCount">0</b>
-</div>
-
-<div class="stat">
-New Orders
-<b id="newOrdersCount">0</b>
-</div>
-
-<div class="stat">
-Products
-<b id="productsCount">0</b>
-</div>
-
-<div class="stat">
-Shops
-<b id="shopsCount">0</b>
-</div>
-
-</div>
-
-<div class="panel">
-
-<h2>Quick Actions</h2>
-
-<button onclick="location.href='dashboard-panel.html'">
-OPEN MANAGEMENT PANEL
-</button>
-
-<button onclick="window.open('../customer/index.html','_blank')">
-OPEN CUSTOMER WEBSITE
-</button>
-
-</div>
-
-<div class="panel">
-
-<h2>Live Orders</h2>
-
-<div id="dashboardOrders">
-Loading...
-</div>
-
-</div>
-
-</div>
-
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-
-<script src="app.js"></script>
-
-<script>
-requireTeam();
-loadDashboardStats();
-loadDashboardOrders();
-</script>
+<p>
+Opening Team Dashboard...
+</p>
 
 </body>
+
 </html>
