@@ -1,728 +1,316 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#ff6600">
+  <meta name="description" content="AIO DIGITAL MALL - Local Shops, Products & COD">
 
-<title>A.I.O. DIGITAL MALL</title>
+  <title>AIO DIGITAL MALL</title>
 
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#FF6600">
+  <link rel="manifest" href="manifest.json">
 
-<style>
-*{
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
-  font-family:Arial,sans-serif;
-}
-
-body{
-  background:#FFF8F0;
-  color:#222;
-}
-
-header{
-  background:#FF6600;
-  color:white;
-  padding:15px;
-  text-align:center;
-  position:sticky;
-  top:0;
-  z-index:10;
-}
-
-header h1{
-  font-size:20px;
-}
-
-.container{
-  padding:15px;
-}
-
-.product-grid{
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:12px;
-}
-
-.card{
-  background:white;
-  border-radius:12px;
-  padding:10px;
-  box-shadow:0 2px 6px #0002;
-}
-
-.card img{
-  width:100%;
-  height:120px;
-  object-fit:cover;
-  border-radius:8px;
-  background:#eee;
-}
-
-.card h3{
-  font-size:14px;
-  margin:8px 0;
-}
-
-.card p{
-  color:#FF6600;
-  font-weight:bold;
-  font-size:16px;
-}
-
-.detail{
-  font-size:12px;
-  color:#666;
-  margin-top:5px;
-}
-
-.btn{
-  background:#FF6600;
-  color:white;
-  border:none;
-  padding:9px;
-  border-radius:7px;
-  width:100%;
-  margin-top:8px;
-  font-weight:bold;
-}
-
-.cart-btn{
-  position:fixed;
-  bottom:20px;
-  right:20px;
-  background:#FF6600;
-  color:white;
-  border:none;
-  border-radius:50%;
-  width:58px;
-  height:58px;
-  font-size:24px;
-  box-shadow:0 4px 8px #0005;
-  z-index:20;
-}
-
-#cartBox{
-  display:none;
-  position:fixed;
-  bottom:90px;
-  left:10px;
-  right:10px;
-  background:white;
-  padding:15px;
-  border-radius:12px;
-  box-shadow:0 4px 15px #0004;
-  z-index:19;
-  max-height:70vh;
-  overflow:auto;
-}
-
-.cart-item{
-  border-bottom:1px solid #ddd;
-  padding:8px 0;
-}
-
-.empty{
-  text-align:center;
-  padding:20px;
-  color:#777;
-}
-
-.loading{
-  text-align:center;
-  padding:20px;
-}
-</style>
+  <style>
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Arial,sans-serif;
+      background:#fff8f0;
+      color:#222
+    }
+    header{
+      position:sticky;
+      top:0;
+      z-index:100;
+      background:#ff6600;
+      color:#fff;
+      padding:12px 15px;
+      box-shadow:0 2px 8px #0002
+    }
+    .top{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px
+    }
+    .logo{
+      font-size:21px;
+      font-weight:800
+    }
+    button{
+      border:0;
+      cursor:pointer;
+      border-radius:8px;
+      padding:10px 14px;
+      font-weight:bold
+    }
+    .whiteBtn{
+      background:#fff;
+      color:#ff6600
+    }
+    .search{
+      width:100%;
+      margin-top:12px;
+      padding:12px;
+      border:0;
+      border-radius:8px;
+      outline:none
+    }
+    .banner{
+      margin:15px;
+      min-height:150px;
+      border-radius:14px;
+      background:#ff6600;
+      background-size:cover;
+      background-position:center;
+      display:flex;
+      align-items:end;
+      padding:20px;
+      color:white;
+      overflow:hidden
+    }
+    .banner h2{
+      margin:0;
+      background:#0008;
+      padding:8px 12px;
+      border-radius:8px
+    }
+    section{
+      padding:0 15px;
+      margin-bottom:22px
+    }
+    h2{
+      font-size:20px
+    }
+    .categories{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:8px
+    }
+    .category{
+      background:white;
+      padding:12px 5px;
+      border-radius:10px;
+      text-align:center;
+      box-shadow:0 2px 8px #0001;
+      font-size:12px
+    }
+    .products{
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:12px
+    }
+    .card{
+      background:white;
+      border-radius:12px;
+      overflow:hidden;
+      box-shadow:0 2px 8px #0002;
+      padding-bottom:12px
+    }
+    .card img{
+      width:100%;
+      height:150px;
+      object-fit:cover;
+      background:#eee
+    }
+    .card h3{
+      margin:10px;
+      font-size:15px
+    }
+    .price{
+      margin:10px;
+      font-size:18px;
+      font-weight:bold;
+      color:#e65100
+    }
+    .card button{
+      margin:0 10px;
+      width:calc(100% - 20px);
+      background:#ff6600;
+      color:white
+    }
+    .out{
+      background:#999!important;
+      cursor:not-allowed
+    }
+    .modal{
+      display:none;
+      position:fixed;
+      inset:0;
+      background:#0008;
+      z-index:500;
+      padding:20px
+    }
+    .modalBox{
+      background:white;
+      max-width:500px;
+      margin:30px auto;
+      border-radius:15px;
+      padding:20px;
+      max-height:90vh;
+      overflow:auto
+    }
+    input,textarea{
+      width:100%;
+      padding:12px;
+      margin:7px 0;
+      border:1px solid #ddd;
+      border-radius:8px
+    }
+    .orange{
+      background:#ff6600;
+      color:white
+    }
+    .cartItem{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding:10px 0;
+      border-bottom:1px solid #ddd
+    }
+    .danger{
+      background:#d32f2f;
+      color:#fff
+    }
+    .timer{
+      text-align:center;
+      background:#222;
+      color:#fff;
+      padding:10px;
+      font-weight:bold
+    }
+    footer{
+      text-align:center;
+      padding:25px;
+      background:#222;
+      color:#fff;
+      margin-top:30px
+    }
+    @media(max-width:500px){
+      .categories{grid-template-columns:repeat(4,1fr)}
+      .products{grid-template-columns:repeat(2,1fr)}
+      .card img{height:125px}
+    }
+  </style>
 </head>
 
 <body>
 
 <header>
-  <h1>🚩 A.I.O. DIGITAL MALL</h1>
-  <p>All Products • Local Shops • COD</p>
-</header>
-
-<div class="container">
-
-  <h2 style="margin-bottom:12px;color:#FF6600">
-    🛍️ Live Products
-  </h2>
-
-  <div
-    class="product-grid"
-    id="productList"
-  >
-    <div class="loading">
-      Firebase se products load ho rahe hain...
+  <div class="top">
+    <div class="logo">🚩 AIO DIGITAL MALL</div>
+    <div>
+      <button class="whiteBtn" onclick="openLogin()">LOGIN</button>
+      <button class="whiteBtn" onclick="openCart()">🛒 <span id="cartCount">0</span></button>
     </div>
   </div>
 
+  <input
+    id="search"
+    class="search"
+    placeholder="Search products..."
+    oninput="searchProducts()"
+  >
+</header>
+
+<div class="timer">
+  ⚡ FLASH SALE ENDS IN <span id="timer">02:59:59</span>
 </div>
 
+<div id="mainBanner" class="banner">
+  <h2>🛍️ AIO DIGITAL MALL</h2>
+</div>
+
+<section>
+  <h2>8 CATEGORIES</h2>
+
+  <div class="categories">
+    <div class="category">🍽️<br>Hotel & Food</div>
+    <div class="category">🛒<br>Grocery</div>
+    <div class="category">👕<br>Fashion</div>
+    <div class="category">📚<br>Education</div>
+    <div class="category">💎<br>Jewellery</div>
+    <div class="category">🏠<br>Property</div>
+    <div class="category">📱<br>Mobile & AC</div>
+    <div class="category">🛍️<br>Amazon</div>
+  </div>
+</section>
+
+<section>
+  <h2>🔥 LOCAL PRODUCTS</h2>
+  <div id="localProducts" class="products">
+    <p>Firebase se products load ho rahe hain...</p>
+  </div>
+</section>
+
+<section>
+  <h2>🛒 AMAZON DEALS</h2>
+  <div id="affiliateProducts" class="products">
+    <p>Deals load ho rahe hain...</p>
+  </div>
+</section>
+
+<footer>
+  <b>AIO DIGITAL MALL</b>
+  <br>
+  Local Shops • Products • COD
+  <br><br>
+  © 2026 AIO DIGITAL MALL
+</footer>
+
+<!-- LOGIN -->
+<div id="loginModal" class="modal">
+  <div class="modalBox">
+    <h2>📱 Mobile OTP Login</h2>
+
+    <input
+      id="phone"
+      type="tel"
+      placeholder="+919876543210"
+    >
+
+    <div id="recaptcha"></div>
+
+    <button class="orange" onclick="sendOTP()">OTP BHEJO</button>
+
+    <input
+      id="otp"
+      type="number"
+      placeholder="OTP"
+    >
+
+    <button class="orange" onclick="verifyOTP()">VERIFY</button>
+
+    <button onclick="closeLogin()">CLOSE</button>
+  </div>
+</div>
 
 <!-- CART -->
+<div id="cartModal" class="modal">
+  <div class="modalBox">
+    <h2>🛒 Your Cart</h2>
 
-<div id="cartBox">
+    <div id="cartItems"></div>
 
-  <h3>🛒 Your Cart</h3>
+    <hr>
 
-  <div id="cartItems"></div>
+    <h3>
+      Total: ₹<span id="cartTotal">0</span>
+    </h3>
 
-  <h3 style="margin-top:10px">
-    Total: ₹<span id="cartTotal">0</span>
-  </h3>
+    <button class="orange" onclick="placeCODOrder()">
+      📦 PLACE COD ORDER
+    </button>
 
-  <button
-    class="btn"
-    onclick="placeCODOrder()"
-  >
-    📦 PLACE COD ORDER
-  </button>
-
+    <button onclick="closeCart()">CLOSE</button>
+  </div>
 </div>
 
-
-<button
-  class="cart-btn"
-  onclick="toggleCart()"
->
-  🛒
-  <span id="cartCount">0</span>
-</button>
-
-
-<script type="module">
-
-/* =====================================================
-   FIREBASE - A.I.O. DIGITAL MALL
-===================================================== */
-
-import {
-  initializeApp
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-
-import {
-  getFirestore,
-  collection,
-  onSnapshot,
-  addDoc,
-  serverTimestamp
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-
-const firebaseConfig = {
-
-  apiKey:
-  "AIzaSyAyH9RRJTEETFh4zHWwCMO4d6qMielJQFA",
-
-  authDomain:
-  "aio-digital-mall.firebaseapp.com",
-
-  projectId:
-  "aio-digital-mall",
-
-  storageBucket:
-  "aio-digital-mall.firebasestorage.app",
-
-  messagingSenderId:
-  "501384049673",
-
-  appId:
-  "1:501384049673:web:968bd8311cc700f82874d8",
-
-  measurementId:
-  "G-TNDT9FYNRP"
-
-};
-
-
-const app =
-initializeApp(firebaseConfig);
-
-const db =
-getFirestore(app);
-
-
-/* =====================================================
-   CART
-===================================================== */
-
-let cart =
-JSON.parse(
-  localStorage.getItem("aio_cart") || "[]"
-);
-
-
-function updateCart(){
-
-  document
-  .getElementById("cartCount")
-  .innerText=cart.length;
-
-
-  let total=0;
-
-  cart.forEach(item=>{
-    total += Number(item.price || 0);
-  });
-
-
-  document
-  .getElementById("cartTotal")
-  .innerText=total;
-
-
-  const box =
-  document.getElementById("cartItems");
-
-
-  if(cart.length===0){
-
-    box.innerHTML=
-    `<div class="empty">
-      Cart empty hai.
-    </div>`;
-
-    return;
-  }
-
-
-  box.innerHTML =
-  cart.map(
-    (item,index)=>`
-
-      <div class="cart-item">
-
-        <b>${escapeHtml(item.name)}</b>
-
-        <br>
-
-        ₹${Number(item.price || 0)}
-
-        <button
-          class="btn"
-          onclick="removeCart(${index})"
-        >
-          REMOVE
-        </button>
-
-      </div>
-
-    `
-  ).join("");
-
-}
-
-
-window.removeCart=function(index){
-
-  cart.splice(index,1);
-
-  localStorage.setItem(
-    "aio_cart",
-    JSON.stringify(cart)
-  );
-
-  updateCart();
-
-};
-
-
-window.toggleCart=function(){
-
-  const box =
-  document.getElementById("cartBox");
-
-  box.style.display =
-  box.style.display==="block"
-  ?
-  "none"
-  :
-  "block";
-
-};
-
-
-window.addToCart=function(
-  id,
-  name,
-  price
-){
-
-  cart.push({
-
-    id:id,
-
-    name:name,
-
-    price:Number(price || 0)
-
-  });
-
-
-  localStorage.setItem(
-    "aio_cart",
-    JSON.stringify(cart)
-  );
-
-
-  updateCart();
-
-  alert(
-    name+
-    " cart me add ho gaya ✅"
-  );
-
-};
-
-
-/* =====================================================
-   LIVE PRODUCTS
-===================================================== */
-
-const productList =
-document.getElementById("productList");
-
-
-onSnapshot(
-  collection(db,"products"),
-
-  snapshot=>{
-
-    productList.innerHTML="";
-
-
-    if(snapshot.empty){
-
-      productList.innerHTML=
-      `<div class="empty">
-        Abhi products available nahi hain.
-        <br>
-        Team Panel se product add karo.
-      </div>`;
-
-      return;
-    }
-
-
-    snapshot.forEach(doc=>{
-
-      const p=doc.data();
-
-
-      if(p.status &&
-         p.status!=="active"){
-
-        return;
-
-      }
-
-
-      const div =
-      document.createElement("div");
-
-      div.className="card";
-
-
-      const photo =
-      p.photo || "";
-
-
-      div.innerHTML=`
-
-        ${
-          photo
-          ?
-          `<img
-             src="${escapeHtml(photo)}"
-             alt="${escapeHtml(p.name || "")}"
-           >`
-          :
-          `<div
-             style="
-             height:120px;
-             background:#eee;
-             border-radius:8px;
-             display:flex;
-             align-items:center;
-             justify-content:center;
-             color:#777;
-             "
-           >
-             No Image
-           </div>`
-        }
-
-
-        <h3>
-          ${escapeHtml(
-            p.name || "Product"
-          )}
-        </h3>
-
-
-        <p>
-          ₹${Number(p.price || 0)}
-        </p>
-
-
-        ${
-          p.detail
-          ?
-          `<div class="detail">
-            ${escapeHtml(p.detail)}
-          </div>`
-          :
-          ""
-        }
-
-
-        ${
-          p.category
-          ?
-          `<div class="detail">
-            Category:
-            ${escapeHtml(p.category)}
-          </div>`
-          :
-          ""
-        }
-
-
-        ${
-          p.type==="affiliate"
-
-          ?
-
-          `<button
-            class="btn"
-            onclick="
-              window.open(
-                '${escapeHtml(p.link || "#")}',
-                '_blank'
-              )
-            "
-          >
-            🛒 BUY NOW
-          </button>`
-
-          :
-
-          `<button
-            class="btn"
-            onclick="
-              addToCart(
-                '${doc.id}',
-                '${escapeHtml(p.name || "Product")}',
-                '${Number(p.price || 0)}'
-              )
-            "
-          >
-            ADD TO CART
-          </button>`
-        }
-
-      `;
-
-
-      productList.appendChild(div);
-
-    });
-
-  },
-
-  error=>{
-
-    console.error(error);
-
-    productList.innerHTML=
-    `<div class="empty">
-      Firebase connection error.
-      <br><br>
-      ${escapeHtml(error.message)}
-    </div>`;
-
-  }
-
-);
-
-
-/* =====================================================
-   COD ORDER
-===================================================== */
-
-window.placeCODOrder =
-async function(){
-
-  if(cart.length===0){
-
-    alert("Cart empty hai");
-
-    return;
-
-  }
-
-
-  const phone =
-  prompt(
-    "Customer mobile number daalo"
-  );
-
-
-  if(!phone){
-
-    return;
-
-  }
-
-
-  const address =
-  prompt(
-    "Complete delivery address daalo"
-  );
-
-
-  if(!address){
-
-    return;
-
-  }
-
-
-  const total =
-  cart.reduce(
-    (sum,item)=>
-    sum+
-    Number(item.price || 0),
-    0
-  );
-
-
-  const deliveryOTP =
-  Math.floor(
-    1000+
-    Math.random()*9000
-  );
-
-
-  try{
-
-    await addDoc(
-      collection(db,"orders"),
-      {
-
-        items:cart,
-
-        phone:phone,
-
-        address:address,
-
-        total:total,
-
-        paymentMethod:"COD",
-
-        status:"New",
-
-        deliveryOTP:deliveryOTP,
-
-        createdAt:
-        serverTimestamp()
-
-      }
-    );
-
-
-    cart=[];
-
-
-    localStorage.removeItem(
-      "aio_cart"
-    );
-
-
-    updateCart();
-
-
-    document
-    .getElementById("cartBox")
-    .style.display="none";
-
-
-    alert(
-      "🎉 COD ORDER PLACED ✅\n\n"+
-      "Delivery OTP: "+
-      deliveryOTP
-    );
-
-
-  }catch(error){
-
-    console.error(error);
-
-    alert(
-      "Order place nahi hua:\n"+
-      error.message
-    );
-
-  }
-
-};
-
-
-/* =====================================================
-   ESCAPE HTML
-===================================================== */
-
-function escapeHtml(value){
-
-  return String(value)
-
-  .replace(/&/g,"&amp;")
-
-  .replace(/</g,"&lt;")
-
-  .replace(/>/g,"&gt;")
-
-  .replace(/"/g,"&quot;")
-
-  .replace(/'/g,"&#039;");
-
-}
-
-
-/* =====================================================
-   INITIAL CART
-===================================================== */
-
-updateCart();
-
-
-</script>
-
-
-<script>
-
-if(
-  "serviceWorker"
-  in navigator
-){
-
-  navigator
-  .serviceWorker
-  .register("sw.js")
-  .catch(
-    error=>
-    console.error(
-      "Service Worker:",
-      error
-    )
-  );
-
-}
-
-</script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+<script src="app.js"></script>
 
 </body>
 </html>
