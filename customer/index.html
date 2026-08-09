@@ -1,291 +1,368 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
+
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1.0">
+
+<meta
+  name="theme-color"
+  content="#ff6600">
+
+<link
+  rel="manifest"
+  href="manifest.json">
+
 <title>AIO DIGITAL MALL</title>
 
-<link rel="manifest" href="manifest.json">
-
 <style>
-*{box-sizing:border-box}
+
+*{
+  box-sizing:border-box;
+}
+
 body{
- margin:0;
- font-family:Arial,sans-serif;
- background:#fff8f0;
- color:#222;
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:#fff8f0;
+  color:#171717;
 }
+
 header{
- background:#ff6600;
- color:#fff;
- padding:15px;
- position:sticky;
- top:0;
- z-index:10;
+  background:#111;
+  color:white;
+  padding:14px 4%;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  position:sticky;
+  top:0;
+  z-index:100;
 }
-.header{
- display:flex;
- align-items:center;
- justify-content:space-between;
- gap:10px;
+
+.brand{
+  font-weight:900;
 }
-.logo{
- font-size:21px;
- font-weight:bold;
-}
+
 button{
- border:0;
- border-radius:8px;
- padding:10px 14px;
- cursor:pointer;
- font-weight:bold;
+  border:0;
+  border-radius:10px;
+  padding:11px 15px;
+  cursor:pointer;
+  font-weight:700;
 }
-.btn{
- background:#ff6600;
- color:white;
+
+.primary{
+  background:#ff6600;
+  color:white;
 }
-.cart-btn{
- background:white;
- color:#ff6600;
+
+.secondary{
+  background:#eee;
 }
-.container{
- max-width:1100px;
- margin:auto;
- padding:15px;
+
+.danger{
+  background:#e53935;
+  color:white;
 }
+
+.hidden{
+  display:none!important;
+}
+
+main{
+  max-width:1200px;
+  margin:auto;
+  padding:18px;
+}
+
+.hero{
+  min-height:220px;
+  border-radius:18px;
+  background:#ff6600 center/cover no-repeat;
+  color:white;
+  display:grid;
+  place-items:center;
+  text-align:center;
+}
+
 .search{
- width:100%;
- padding:14px;
- border:1px solid #ddd;
- border-radius:10px;
- margin:15px 0;
- font-size:16px;
+  width:100%;
+  margin:18px 0;
+  padding:14px;
+  border:1px solid #ddd;
+  border-radius:12px;
 }
-.banner{
- min-height:160px;
- border-radius:15px;
- background:#eee center/cover no-repeat;
- display:flex;
- align-items:center;
- justify-content:center;
- margin-bottom:20px;
+
+.grid{
+  display:grid;
+  grid-template-columns:
+    repeat(auto-fit,minmax(190px,1fr));
+  gap:14px;
 }
-.banner h2{
- background:rgba(0,0,0,.6);
- color:#fff;
- padding:12px;
- border-radius:8px;
-}
-.categories{
- display:grid;
- grid-template-columns:repeat(4,1fr);
- gap:10px;
-}
-.category{
- background:white;
- padding:18px 8px;
- text-align:center;
- border-radius:12px;
- box-shadow:0 2px 8px #ddd;
- cursor:pointer;
-}
-.products{
- display:grid;
- grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
- gap:15px;
-}
+
 .card{
- background:#fff;
- border-radius:12px;
- padding:12px;
- box-shadow:0 2px 10px #ddd;
+  background:white;
+  border-radius:16px;
+  overflow:hidden;
+  box-shadow:0 4px 18px #0001;
 }
+
 .card img{
- width:100%;
- height:160px;
- object-fit:cover;
- border-radius:8px;
+  width:100%;
+  height:180px;
+  object-fit:cover;
 }
-.card h3{
- margin:8px 0;
+
+.card-body{
+  padding:14px;
 }
-.price{
- font-size:19px;
- font-weight:bold;
+
+.card-body button{
+  width:100%;
+  margin-top:12px;
 }
-.stock{
- font-size:13px;
- color:#777;
-}
-#cartBox{
- background:white;
- padding:15px;
- border-radius:12px;
- margin-top:25px;
- box-shadow:0 2px 10px #ddd;
-}
+
 .modal{
- display:none;
- position:fixed;
- inset:0;
- background:rgba(0,0,0,.65);
- z-index:100;
- align-items:center;
- justify-content:center;
- padding:15px;
+  position:fixed;
+  inset:0;
+  background:#0009;
+  display:grid;
+  place-items:center;
+  padding:20px;
+  z-index:500;
 }
-.modal-content{
- background:white;
- width:100%;
- max-width:420px;
- padding:20px;
- border-radius:15px;
+
+.modal-box{
+  background:white;
+  width:min(430px,100%);
+  padding:20px;
+  border-radius:18px;
 }
-.modal input,.modal textarea{
- width:100%;
- padding:12px;
- margin:7px 0;
- border:1px solid #ddd;
- border-radius:8px;
+
+.modal input{
+  width:100%;
+  padding:12px;
+  margin:7px 0;
+  border:1px solid #ddd;
+  border-radius:10px;
 }
-.close{
- float:right;
- background:#eee;
+
+.cart{
+  position:fixed;
+  right:15px;
+  bottom:15px;
+  width:min(430px,calc(100% - 30px));
+  max-height:85vh;
+  overflow:auto;
+  background:white;
+  padding:20px;
+  border-radius:18px;
+  box-shadow:0 10px 40px #0004;
+  z-index:400;
 }
-.timer{
- text-align:center;
- background:#222;
- color:#fff;
- padding:10px;
- border-radius:8px;
- margin:15px 0;
+
+.cart-row{
+  display:flex;
+  justify-content:space-between;
+  padding:10px 0;
+  border-bottom:1px solid #eee;
 }
-footer{
- text-align:center;
- padding:30px 15px;
+
+.cart-row small{
+  display:block;
+  color:#777;
 }
-@media(max-width:600px){
- .categories{grid-template-columns:repeat(2,1fr)}
- .products{grid-template-columns:repeat(2,1fr)}
- .card img{height:130px}
+
+.toast{
+  position:fixed;
+  bottom:20px;
+  left:50%;
+  transform:translate(-50%,30px);
+  opacity:0;
+  background:#111;
+  color:white;
+  padding:12px 18px;
+  border-radius:10px;
 }
+
+.toast.show{
+  opacity:1;
+  transform:translate(-50%,0);
+}
+
 </style>
+
 </head>
 
 <body>
 
 <header>
-<div class="header">
-<div class="logo">🚩 AIO DIGITAL MALL</div>
+
+<div class="brand">
+🚩 AIO DIGITAL MALL
+</div>
+
 <div>
-<button onclick="openLogin()" class="cart-btn">LOGIN</button>
-<button onclick="toggleCart()" class="cart-btn">
-🛒 CART (<span id="cartCount">0</span>)
+
+<button
+  data-login
+  class="primary">
+LOGIN
 </button>
+
+<button data-cart>
+🛒 <span id="cartCount">0</span>
+</button>
+
 </div>
-</div>
+
 </header>
 
-<div class="container">
+<main>
 
-<div class="banner" id="mainBanner">
-<h2>THE AIO DIGITAL MALL</h2>
+<div
+  id="mainBanner"
+  class="hero">
+
+<div>
+
+<h1>AIO DIGITAL MALL</h1>
+
+<p>
+All Products • Local Shops • COD
+</p>
+
+</div>
+
 </div>
 
 <input
- id="search"
- class="search"
- placeholder="Search products..."
- oninput="searchProducts()"
->
+  id="search"
+  class="search"
+  placeholder="Search products..."
+  oninput="searchProducts()">
 
-<div class="timer">
-FLASH SALE ENDS IN:
-<strong id="timer">02:59:59</strong>
+<h2>
+🔥 LOCAL PRODUCTS
+</h2>
+
+<div
+  id="localProducts"
+  class="grid">
 </div>
 
-<h2>🛍️ CATEGORIES</h2>
+<h2>
+🛒 AMAZON DEALS
+</h2>
 
-<div class="categories">
-<div class="category" onclick="filterCategory('Hotel & Food')">🍽️<br>Hotel & Food</div>
-<div class="category" onclick="filterCategory('Grocery')">🛒<br>Grocery</div>
-<div class="category" onclick="filterCategory('Fashion')">👕<br>Fashion</div>
-<div class="category" onclick="filterCategory('Electronics')">📱<br>Electronics</div>
-<div class="category" onclick="filterCategory('Education')">📚<br>Education</div>
-<div class="category" onclick="filterCategory('Jewellery')">💎<br>Jewellery</div>
-<div class="category" onclick="filterCategory('Property')">🏠<br>Property</div>
-<div class="category" onclick="filterCategory('Mobile & AC')">📱<br>Mobile & AC</div>
+<div
+  id="affiliateProducts"
+  class="grid">
 </div>
 
-<h2>🔥 LOCAL PRODUCTS</h2>
-<div id="localProducts" class="products">
-<p>Firebase se products load ho rahe hain...</p>
-</div>
+<h2>
+⚡ FLASH SALE
+</h2>
 
-<h2>🛒 AMAZON DEALS</h2>
-<div id="affiliateProducts" class="products">
-<p>Deals load ho rahe hain...</p>
-</div>
+<p>
+Ends in:
+<b id="timer">03:00:00</b>
+</p>
 
-<div id="cartBox">
-<h2>🛒 Your Cart</h2>
-<div id="cartItems">
-<p>Cart khali hai.</p>
-</div>
+</main>
 
-<hr>
+<div
+  id="loginBox"
+  class="modal hidden">
 
-<h3>Total: ₹<span id="cartTotal">0</span></h3>
+<div class="modal-box">
 
-<button class="btn" onclick="placeOrder()">
-📦 ORDER KARO - COD
+<h2>
+Mobile OTP Login
+</h2>
+
+<input
+  id="phone"
+  placeholder="+919876543210">
+
+<button
+  class="primary"
+  onclick="sendOTP()">
+OTP BHEJO
 </button>
-</div>
 
-</div>
+<input
+  id="otp"
+  placeholder="OTP">
 
-<footer>
-🚩 AIO DIGITAL MALL<br>
-Local Shops • Products • COD
-</footer>
-
-<!-- LOGIN -->
-
-<div id="loginModal" class="modal">
-<div class="modal-content">
-
-<button class="close" onclick="closeLogin()">X</button>
-
-<h2>📱 Mobile OTP Login</h2>
+<button
+  class="primary"
+  onclick="verifyOTP()">
+VERIFY
+</button>
 
 <div id="recaptcha"></div>
 
-<input
- id="phone"
- type="tel"
- placeholder="+919876543210"
->
-
-<button class="btn" onclick="sendOTP()">OTP BHEJO</button>
-
-<input
- id="otp"
- type="number"
- placeholder="OTP"
->
-
-<button class="btn" onclick="verifyOTP()">VERIFY</button>
-
-<p id="loginStatus"></p>
+<button
+  data-close-login
+  class="secondary">
+CLOSE
+</button>
 
 </div>
+
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<div
+  id="cartBox"
+  class="cart hidden">
 
-<script src="app.js"></script>
+<h2>
+🛒 Your Cart
+</h2>
+
+<div id="cartItems"></div>
+
+<h3>
+Total:
+₹<span id="cartTotal">0</span>
+</h3>
+
+<textarea
+  id="address"
+  rows="4"
+  style="width:100%;padding:10px"
+  placeholder="Complete delivery address">
+</textarea>
+
+<button
+  class="primary"
+  onclick="placeOrder()"
+  style="width:100%">
+PLACE COD ORDER
+</button>
+
+<button
+  class="secondary"
+  onclick="toggleCart(false)"
+  style="width:100%;margin-top:8px">
+CLOSE
+</button>
+
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script
+  type="module"
+  src="app.js">
+</script>
 
 </body>
+
 </html>
