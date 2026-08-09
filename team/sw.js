@@ -1,85 +1,47 @@
-const CACHE_NAME =
-  "aio-digital-mall-team-v1";
+const CACHE_NAME = "aio-team-v1";
 
 const FILES = [
-  "./",
   "./index.html",
+  "./dashboard.html",
+  "./dashboard-panel.html",
   "./app.js",
   "./manifest.json"
 ];
 
-self.addEventListener(
-  "install",
-  event => {
+self.addEventListener("install", event => {
 
-    event.waitUntil(
-      caches
-        .open(CACHE_NAME)
-        .then(cache =>
-          cache.addAll(FILES)
-        )
-    );
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(FILES))
+  );
 
-    self.skipWaiting();
-  }
-);
+  self.skipWaiting();
 
-self.addEventListener(
-  "activate",
-  event => {
+});
 
-    event.waitUntil(
+self.addEventListener("activate", event => {
 
-      caches.keys()
-        .then(keys =>
-
-          Promise.all(
-
-            keys
-              .filter(
-                key =>
-                  key !== CACHE_NAME
-              )
-              .map(
-                key =>
-                  caches.delete(key)
-              )
-
-          )
-
-        )
-
-    );
-
-    self.clients.claim();
-  }
-);
-
-self.addEventListener(
-  "fetch",
-  event => {
-
-    if (
-      event.request.method !==
-      "GET"
-    ) {
-      return;
-    }
-
-    event.respondWith(
-
-      caches.match(
-        event.request
+  event.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(
+        keys
+          .filter(key => key !== CACHE_NAME)
+          .map(key => caches.delete(key))
       )
-      .then(cached => {
+    )
+  );
 
-        return (
-          cached ||
-          fetch(event.request)
-        );
+  self.clients.claim();
 
-      })
+});
 
-    );
-  }
-);
+self.addEventListener("fetch", event => {
+
+  event.respondWith(
+    caches.match(event.request)
+      .then(response =>
+        response || fetch(event.request)
+      )
+  );
+
+});
