@@ -1,122 +1,1452 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>VAISHNAV TEAM PANEL</title>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+
+<title>A.I.O. DIGITAL MALL - TEAM PANEL</title>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
 <style>
-body{font-family:sans-serif;background:#f4f4f4;padding:10px;margin:0}
-.header{background:#222;color:white;padding:10px;display:flex;justify-content:space-between}
-.box{background:white;padding:15px;margin:10px 0;border-radius:10px;box-shadow:0 2px 5px #ccc}
-button{background:#28a745;color:white;border:none;padding:10px 15px;border-radius:5px;margin:5px 2px;cursor:pointer}
-input,file,select,textarea{width:95%;padding:8px;margin:5px 0;border:1px solid #ccc;border-radius:5px}
-h2{color:#222;margin:0}
-h3{border-bottom:2px solid #28a745;padding-bottom:5px}
-.hidden{display:none}
-.red{background:red}
-.blue{background:#007bff}
+*{
+  box-sizing:border-box;
+  font-family:Arial,sans-serif;
+}
+
+body{
+  margin:0;
+  padding:10px;
+  background:#f4f4f4;
+  color:#222;
+}
+
+.header{
+  background:#222;
+  color:white;
+  padding:14px;
+  border-radius:10px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  position:sticky;
+  top:0;
+  z-index:100;
+}
+
+.header h2{
+  margin:0;
+  font-size:18px;
+}
+
+.box{
+  background:white;
+  padding:15px;
+  margin:12px 0;
+  border-radius:12px;
+  box-shadow:0 2px 7px #0002;
+}
+
+h3{
+  margin-top:0;
+  border-bottom:2px solid #28a745;
+  padding-bottom:8px;
+}
+
+h4{
+  margin-bottom:5px;
+}
+
+input,
+select,
+textarea{
+  width:100%;
+  padding:11px;
+  margin:6px 0;
+  border:1px solid #ccc;
+  border-radius:7px;
+  font-size:15px;
+}
+
+textarea{
+  min-height:80px;
+  resize:vertical;
+}
+
+button{
+  border:0;
+  border-radius:7px;
+  padding:10px 14px;
+  margin:4px 2px;
+  cursor:pointer;
+  font-weight:bold;
+  color:white;
+  background:#28a745;
+}
+
+button.blue{
+  background:#007bff;
+}
+
+button.red{
+  background:#dc3545;
+}
+
+button.orange{
+  background:#ff6600;
+}
+
+button.gray{
+  background:#555;
+}
+
+.hidden{
+  display:none;
+}
+
+.product{
+  border:1px solid #ddd;
+  border-radius:10px;
+  padding:10px;
+  margin:8px 0;
+  background:#fafafa;
+}
+
+.product img{
+  width:100%;
+  max-height:180px;
+  object-fit:cover;
+  border-radius:8px;
+}
+
+.order{
+  border:1px solid #ddd;
+  border-radius:10px;
+  padding:12px;
+  margin:10px 0;
+  background:#fafafa;
+}
+
+.badge{
+  display:inline-block;
+  padding:5px 8px;
+  border-radius:5px;
+  background:#ff6600;
+  color:white;
+  font-size:12px;
+  font-weight:bold;
+}
+
+.stats{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:10px;
+}
+
+.stat{
+  background:#f7f7f7;
+  border-radius:10px;
+  padding:15px;
+  text-align:center;
+}
+
+.stat strong{
+  display:block;
+  font-size:25px;
+  color:#ff6600;
+}
+
+.small{
+  font-size:12px;
+  color:#666;
+}
+
+#message{
+  position:fixed;
+  bottom:15px;
+  left:50%;
+  transform:translateX(-50%);
+  background:#222;
+  color:white;
+  padding:12px 18px;
+  border-radius:8px;
+  display:none;
+  z-index:999;
+}
 </style>
 </head>
+
 <body>
 
 <div class="header">
-<h2>Welcome: <span id="roleName">Guest</span></h2>
-<button onclick="logout()" class="red" id="logoutBtn">Logout</button>
+  <h2>🚩 A.I.O. DIGITAL MALL</h2>
+  <div>
+    <span id="roleName">Guest</span>
+    <button class="red" id="logoutBtn" onclick="logout()">Logout</button>
+  </div>
 </div>
 
-<!-- 1. ATTENDANCE - SABKE LIYE -->
-<div class="box">
+
+<!-- ================= ATTENDANCE ================= -->
+
+<div class="box" id="attendanceBox">
+
 <h3>📸 Duty Attendance</h3>
-<input type="file" id="selfie" accept="image/*" capture="camera">
-<button onclick="dutyIn()">DUTY IN</button>
-<button onclick="dutyOut()" class="red">DUTY OFF</button>
-<p id="workHour"><b>Working Hours:</b> 00:00</p>
+
+<input
+  type="file"
+  id="selfie"
+  accept="image/*"
+  capture="camera"
+>
+
+<button onclick="dutyIn()">
+DUTY IN
+</button>
+
+<button class="red" onclick="dutyOut()">
+DUTY OFF
+</button>
+
+<p id="workHour">
+<b>Working Hours:</b> 00:00
+</p>
+
 </div>
 
-<!-- 2. PRODUCT TEAM - 5 EMPLOYEE -->
+
+<!-- ================= PRODUCT TEAM ================= -->
+
 <div class="box hidden" id="productTeam">
-<h3>🛒 Product + Shop Team</h3>
-<h4>Add Shop</h4>
-<input id="shopName" placeholder="Shop Name">
-<select id="shopCat"><option>Hotel</option><option>Grocery</option><option>Fashion</option><option>Electronics</option></select>
-<button onclick="addShop()">ADD SHOP</button>
 
-<h4>Add Product</h4>
-<input id="pName" placeholder="Product Name">
-<input id="pPrice" placeholder="Rate Making - ₹">
-<textarea id="pDetail" placeholder="Product Details"></textarea>
-<input id="pPhoto" type="file">
-<button onclick="saveProduct()">SAVE PRODUCT</button>
+<h3>🛒 Product + Local Shop Management</h3>
 
-<h4>Affiliation</h4>
-<button class="blue">AZMON AFFILIATION</button>
-<button class="blue">Amazon Frontline Store</button>
+<h4>🏪 Add Local Shop</h4>
+
+<input
+  id="shopName"
+  placeholder="Shop Name"
+>
+
+<select id="shopCat">
+
+<option value="Hotel">Hotel & Food</option>
+<option value="Grocery">Grocery</option>
+<option value="Fashion">Fashion</option>
+<option value="Electronics">Electronics</option>
+<option value="Education">Education</option>
+<option value="Jewellery">Jewellery</option>
+<option value="Property">Property</option>
+<option value="Mobile & AC">Mobile & AC</option>
+
+</select>
+
+<button onclick="addShop()">
+ADD SHOP
+</button>
+
+
+<h4>📦 Add Local Product</h4>
+
+<input
+  id="pName"
+  placeholder="Product Name"
+>
+
+<input
+  id="pPrice"
+  type="number"
+  placeholder="Price ₹"
+>
+
+<textarea
+  id="pDetail"
+  placeholder="Product Details"
+></textarea>
+
+<input
+  id="pPhoto"
+  placeholder="Product Image URL"
+>
+
+<select id="pCategory">
+
+<option value="Grocery">Grocery</option>
+<option value="Hotel">Hotel & Food</option>
+<option value="Fashion">Fashion</option>
+<option value="Electronics">Electronics</option>
+<option value="Education">Education</option>
+<option value="Jewellery">Jewellery</option>
+<option value="Property">Property</option>
+<option value="Mobile & AC">Mobile & AC</option>
+
+</select>
+
+<input
+  id="pStock"
+  type="number"
+  value="1"
+  min="0"
+  placeholder="Stock"
+>
+
+<button class="orange" onclick="saveProduct()">
+SAVE PRODUCT
+</button>
+
+
+<h4>🛒 Amazon / Affiliate Product</h4>
+
+<input
+  id="aName"
+  placeholder="Affiliate Product Name"
+>
+
+<input
+  id="aPrice"
+  type="number"
+  placeholder="Display Price ₹"
+>
+
+<input
+  id="aPhoto"
+  placeholder="Product Image URL"
+>
+
+<input
+  id="aLink"
+  placeholder="Amazon Product Link"
+>
+
+<button class="blue" onclick="saveAffiliateProduct()">
+SAVE AFFILIATE PRODUCT
+</button>
+
 </div>
 
-<!-- 3. OPERATION TEAM - 6 EMPLOYEE -->
+
+<!-- ================= OPERATION TEAM ================= -->
+
 <div class="box hidden" id="operationTeam">
-<h3>📦 Operation Team</h3>
-<button>📞 Order Confirm</button>
-<button>📍 Local Market Update</button>
-<button>📊 Stock Update</button>
-<button>🎧 Help Desk / Refund / Replace</button>
-<button>💬 Public Chat/Email/Comments</button>
-<button>🚚 Delivery Boy Panel</button>
-<h4>Live Shoppers Homepage</h4>
-<iframe src="https://pashupatinath-news.github.io/vaishnav-mall/customer/" style="width:100%;height:250px;border:1px solid #ccc"></iframe>
+
+<h3>📦 Operations</h3>
+
+<div class="stats">
+
+<div class="stat">
+<strong id="newOrders">0</strong>
+New Orders
 </div>
 
-<!-- 4. CEO PANEL -->
+<div class="stat">
+<strong id="totalOrders">0</strong>
+Total Orders
+</div>
+
+<div class="stat">
+<strong id="totalProducts">0</strong>
+Products
+</div>
+
+<div class="stat">
+<strong id="totalShops">0</strong>
+Shops
+</div>
+
+</div>
+
+</div>
+
+
+<!-- ================= ORDERS ================= -->
+
+<div class="box hidden" id="ordersBox">
+
+<h3>📦 Live COD Orders</h3>
+
+<div id="ordersList">
+Loading orders...
+</div>
+
+</div>
+
+
+<!-- ================= PRODUCTS ================= -->
+
+<div class="box hidden" id="productsBox">
+
+<h3>🛍️ Live Products</h3>
+
+<div id="productsList">
+Loading products...
+</div>
+
+</div>
+
+
+<!-- ================= CEO PANEL ================= -->
+
 <div class="box hidden" id="ceoPanel">
-<h3>👑 CEO + MD + OWNER CONTROL</h3>
-<p><b>Pending Work:</b> 12</p>
-<p><b>Current Work:</b> 8</p>
-<p><b>Upcoming Work:</b> 5</p>
-<p><b>Total Employees Online:</b> 7</p>
-<button class="blue">View All Employee Activity</button>
-<button class="blue">Full Reports & Analytics</button>
+
+<h3>👑 CEO / MD / OWNER CONTROL</h3>
+
+<div class="stats">
+
+<div class="stat">
+<strong id="ceoOrders">0</strong>
+Orders
 </div>
 
-<!-- 5. PUBLIC VIEW - BINA LOGIN -->
-<div class="box hidden" id="publicView">
-<h3>🛍️ Welcome to Vaishnav Mall</h3>
-<p>Products dekhne ke liye neeche jao. Order karne ke liye contact kare.</p>
-<iframe src="https://pashupatinath-news.github.io/vaishnav-mall/customer/" style="width:100%;height:500px;border:1px solid #ccc"></iframe>
+<div class="stat">
+<strong id="ceoProducts">0</strong>
+Products
 </div>
+
+<div class="stat">
+<strong id="ceoShops">0</strong>
+Shops
+</div>
+
+<div class="stat">
+<strong id="ceoEmployees">0</strong>
+Online
+</div>
+
+</div>
+
+<br>
+
+<button class="blue" onclick="loadAllData()">
+🔄 Refresh Data
+</button>
+
+<button class="orange" onclick="window.open('../index.html','_blank')">
+🌐 Open Customer Website
+</button>
+
+</div>
+
+
+<!-- ================= CUSTOMER PREVIEW ================= -->
+
+<div class="box hidden" id="publicView">
+
+<h3>🛍️ Customer View</h3>
+
+<p>
+Customer website/app Firebase se connected hai.
+</p>
+
+<button
+class="orange"
+onclick="window.open('../index.html','_blank')"
+>
+OPEN CUSTOMER WEBSITE
+</button>
+
+</div>
+
+
+<div id="message"></div>
+
 
 <script>
-// ===== LOGIN CHECK SYSTEM =====
-let role = localStorage.getItem('role');
 
-document.addEventListener('DOMContentLoaded', function() {
-    
-    if(!role){ 
-        // AGAR LOGIN NAHI HAI = PUBLIC MODE
-        document.getElementById('publicView').classList.remove('hidden');
-        document.getElementById('logoutBtn').style.display = 'none';
-        document.getElementById('roleName').innerText = 'Guest';
-    } else { 
-        // AGAR LOGIN HAI = TEAM MODE
-        document.getElementById('roleName').innerText = role;
-        
-        if(role == "PRODUCT_TEAM"){ 
-            document.getElementById('productTeam').classList.remove('hidden'); 
-        }
-        if(role == "OPERATION_TEAM"){ 
-            document.getElementById('operationTeam').classList.remove('hidden'); 
-        }
-        if(role == "CEO" || role == "MD" || role == "OWNER"){ 
-            document.getElementById('productTeam').classList.remove('hidden');
-            document.getElementById('operationTeam').classList.remove('hidden');
-            document.getElementById('ceoPanel').classList.remove('hidden');
-        }
-    }
+/* =====================================================
+   FIREBASE
+===================================================== */
+
+const firebaseConfig = {
+
+  apiKey:
+  "AIzaSyAyH9RRJTEETFh4zHWwCMO4d6qMielJQFA",
+
+  authDomain:
+  "aio-digital-mall.firebaseapp.com",
+
+  projectId:
+  "aio-digital-mall",
+
+  storageBucket:
+  "aio-digital-mall.firebasestorage.app",
+
+  messagingSenderId:
+  "501384049673",
+
+  appId:
+  "1:501384049673:web:968bd8311cc700f82874d8",
+
+  measurementId:
+  "G-TNDT9FYNRP"
+};
+
+
+firebase.initializeApp(firebaseConfig);
+
+const db = firebase.firestore();
+
+
+/* =====================================================
+   LOGIN / ROLE
+===================================================== */
+
+const role =
+localStorage.getItem("role");
+
+const teamLogin =
+localStorage.getItem("teamLogin");
+
+document.addEventListener(
+"DOMContentLoaded",
+function(){
+
+  if(!role){
+
+    document
+    .getElementById("publicView")
+    .classList.remove("hidden");
+
+    document
+    .getElementById("logoutBtn")
+    .style.display="none";
+
+    document
+    .getElementById("roleName")
+    .innerText="Guest";
+
+    return;
+  }
+
+
+  document
+  .getElementById("roleName")
+  .innerText=role;
+
+
+  /* Product Team */
+
+  if(
+    role==="PRODUCT_TEAM" ||
+    role==="MANAGER" ||
+    role==="ADMIN" ||
+    role==="CEO" ||
+    role==="MD" ||
+    role==="OWNER"
+  ){
+
+    document
+    .getElementById("productTeam")
+    .classList.remove("hidden");
+
+    document
+    .getElementById("productsBox")
+    .classList.remove("hidden");
+
+  }
+
+
+  /* Operation Team */
+
+  if(
+    role==="OPERATION_TEAM" ||
+    role==="DELIVERY" ||
+    role==="SUPPORT" ||
+    role==="MANAGER" ||
+    role==="ADMIN" ||
+    role==="CEO" ||
+    role==="MD" ||
+    role==="OWNER"
+  ){
+
+    document
+    .getElementById("operationTeam")
+    .classList.remove("hidden");
+
+    document
+    .getElementById("ordersBox")
+    .classList.remove("hidden");
+
+  }
+
+
+  /* CEO / MD / OWNER */
+
+  if(
+    role==="CEO" ||
+    role==="MD" ||
+    role==="OWNER" ||
+    role==="ADMIN"
+  ){
+
+    document
+    .getElementById("ceoPanel")
+    .classList.remove("hidden");
+
+    document
+    .getElementById("ordersBox")
+    .classList.remove("hidden");
+
+    document
+    .getElementById("productsBox")
+    .classList.remove("hidden");
+
+  }
+
+
+  loadAllData();
+
 });
 
-function logout(){ localStorage.clear(); location.href='dashboard.html'; }
-function dutyIn(){ alert("Duty IN Selfie Uploaded ✅ Working Started"); }
-function dutyOut(){ alert("Duty OFF Selfie Uploaded ✅ Working Stopped"); }
-function addShop(){ if(document.getElementById('shopName').value==""){alert("Shop Name daalo")}else{alert("Shop Added ✅")} }
-function saveProduct(){ if(document.getElementById('pName').value==""){alert("Product Name daalo")}else{alert("Product Saved ✅")} }
+
+/* =====================================================
+   LOGOUT
+===================================================== */
+
+function logout(){
+
+  localStorage.removeItem("role");
+  localStorage.removeItem("teamLogin");
+  localStorage.removeItem("loginTime");
+
+  location.href="index.html";
+
+}
+
+
+/* =====================================================
+   MESSAGE
+===================================================== */
+
+function showMessage(text){
+
+  const box=
+  document.getElementById("message");
+
+  box.innerText=text;
+
+  box.style.display="block";
+
+  setTimeout(
+    ()=>{
+      box.style.display="none";
+    },
+    2500
+  );
+
+}
+
+
+/* =====================================================
+   ADD SHOP
+===================================================== */
+
+async function addShop(){
+
+  const name=
+  document
+  .getElementById("shopName")
+  .value
+  .trim();
+
+  const category=
+  document
+  .getElementById("shopCat")
+  .value;
+
+
+  if(!name){
+
+    alert("Shop Name daalo");
+
+    return;
+  }
+
+
+  try{
+
+    await db
+    .collection("shops")
+    .add({
+
+      name:name,
+
+      category:category,
+
+      status:"active",
+
+      createdAt:
+      firebase.firestore
+      .FieldValue
+      .serverTimestamp()
+
+    });
+
+
+    document
+    .getElementById("shopName")
+    .value="";
+
+
+    showMessage(
+      "🏪 Shop Firebase me save ho gayi ✅"
+    );
+
+
+    loadAllData();
+
+
+  }catch(error){
+
+    console.error(error);
+
+    alert(
+      "Shop save error: "+
+      error.message
+    );
+
+  }
+
+}
+
+
+/* =====================================================
+   SAVE LOCAL PRODUCT
+===================================================== */
+
+async function saveProduct(){
+
+  const name=
+  document
+  .getElementById("pName")
+  .value
+  .trim();
+
+  const price=
+  Number(
+    document
+    .getElementById("pPrice")
+    .value
+  );
+
+  const detail=
+  document
+  .getElementById("pDetail")
+  .value
+  .trim();
+
+  const photo=
+  document
+  .getElementById("pPhoto")
+  .value
+  .trim();
+
+  const category=
+  document
+  .getElementById("pCategory")
+  .value;
+
+  const stock=
+  Number(
+    document
+    .getElementById("pStock")
+    .value
+  );
+
+
+  if(!name){
+
+    alert("Product Name daalo");
+
+    return;
+  }
+
+
+  if(!price || price<0){
+
+    alert("Valid price daalo");
+
+    return;
+  }
+
+
+  try{
+
+    await db
+    .collection("products")
+    .add({
+
+      name:name,
+
+      price:price,
+
+      detail:detail,
+
+      photo:photo,
+
+      category:category,
+
+      stock:stock,
+
+      type:"local",
+
+      status:"active",
+
+      createdAt:
+      firebase.firestore
+      .FieldValue
+      .serverTimestamp()
+
+    });
+
+
+    document
+    .getElementById("pName")
+    .value="";
+
+    document
+    .getElementById("pPrice")
+    .value="";
+
+    document
+    .getElementById("pDetail")
+    .value="";
+
+    document
+    .getElementById("pPhoto")
+    .value="";
+
+    document
+    .getElementById("pStock")
+    .value="1";
+
+
+    showMessage(
+      "🛍️ Product LIVE ho gaya ✅"
+    );
+
+
+    loadAllData();
+
+
+  }catch(error){
+
+    console.error(error);
+
+    alert(
+      "Product save error: "+
+      error.message
+    );
+
+  }
+
+}
+
+
+/* =====================================================
+   SAVE AFFILIATE PRODUCT
+===================================================== */
+
+async function saveAffiliateProduct(){
+
+  const name=
+  document
+  .getElementById("aName")
+  .value
+  .trim();
+
+  const price=
+  Number(
+    document
+    .getElementById("aPrice")
+    .value
+  );
+
+  const photo=
+  document
+  .getElementById("aPhoto")
+  .value
+  .trim();
+
+  const link=
+  document
+  .getElementById("aLink")
+  .value
+  .trim();
+
+
+  if(!name){
+
+    alert("Product name daalo");
+
+    return;
+  }
+
+
+  if(!link){
+
+    alert("Amazon link daalo");
+
+    return;
+  }
+
+
+  try{
+
+    await db
+    .collection("products")
+    .add({
+
+      name:name,
+
+      price:price || 0,
+
+      photo:photo,
+
+      link:link,
+
+      type:"affiliate",
+
+      status:"active",
+
+      createdAt:
+      firebase.firestore
+      .FieldValue
+      .serverTimestamp()
+
+    });
+
+
+    document
+    .getElementById("aName")
+    .value="";
+
+    document
+    .getElementById("aPrice")
+    .value="";
+
+    document
+    .getElementById("aPhoto")
+    .value="";
+
+    document
+    .getElementById("aLink")
+    .value="";
+
+
+    showMessage(
+      "🛒 Affiliate product LIVE ho gaya ✅"
+    );
+
+
+    loadAllData();
+
+
+  }catch(error){
+
+    console.error(error);
+
+    alert(
+      "Affiliate product error: "+
+      error.message
+    );
+
+  }
+
+}
+
+
+/* =====================================================
+   DELETE PRODUCT
+===================================================== */
+
+async function deleteProduct(id){
+
+  if(
+    !confirm(
+      "Product delete karna hai?"
+    )
+  ){
+
+    return;
+  }
+
+
+  try{
+
+    await db
+    .collection("products")
+    .doc(id)
+    .delete();
+
+
+    showMessage(
+      "Product delete ho gaya ✅"
+    );
+
+
+  }catch(error){
+
+    alert(
+      "Delete error: "+
+      error.message
+    );
+
+  }
+
+}
+
+
+/* =====================================================
+   LIVE PRODUCTS
+===================================================== */
+
+function listenProducts(){
+
+  db
+  .collection("products")
+  .onSnapshot(
+    snapshot=>{
+
+      const list=
+      document
+      .getElementById("productsList");
+
+      list.innerHTML="";
+
+
+      snapshot.forEach(
+        doc=>{
+
+          const p=doc.data();
+
+          const div=
+          document
+          .createElement("div");
+
+          div.className="product";
+
+
+          const image=
+          p.photo
+          ?
+          `<img src="${escapeHtml(p.photo)}">`
+          :
+          "";
+
+
+          div.innerHTML=`
+
+            ${image}
+
+            <h4>
+              ${escapeHtml(p.name || "Unnamed")}
+            </h4>
+
+            <p>
+              <b>₹${Number(p.price || 0)}</b>
+            </p>
+
+            <p class="small">
+              Category:
+              ${escapeHtml(p.category || "-")}
+              <br>
+
+              Type:
+              ${escapeHtml(p.type || "-")}
+              <br>
+
+              Stock:
+              ${Number(p.stock || 0)}
+            </p>
+
+            <span class="badge">
+              ${escapeHtml(p.status || "active")}
+            </span>
+
+            <br>
+
+            <button
+              class="red"
+              onclick="deleteProduct('${doc.id}')"
+            >
+              DELETE
+            </button>
+
+          `;
+
+
+          list.appendChild(div);
+
+        }
+      );
+
+
+      document
+      .getElementById("totalProducts")
+      .innerText=snapshot.size;
+
+      document
+      .getElementById("ceoProducts")
+      .innerText=snapshot.size;
+
+    },
+
+    error=>{
+
+      console.error(
+        "Product listener:",
+        error
+      );
+
+    }
+  );
+
+}
+
+
+/* =====================================================
+   LIVE ORDERS
+===================================================== */
+
+function listenOrders(){
+
+  db
+  .collection("orders")
+  .onSnapshot(
+    snapshot=>{
+
+      const list=
+      document
+      .getElementById("ordersList");
+
+      list.innerHTML="";
+
+
+      let newCount=0;
+
+
+      snapshot.forEach(
+        doc=>{
+
+          const o=doc.data();
+
+
+          if(
+            o.status==="New"
+          ){
+
+            newCount++;
+
+          }
+
+
+          const items=
+          Array.isArray(o.items)
+          ?
+          o.items
+          :
+          [];
+
+
+          const itemsHtml=
+          items
+          .map(
+            item=>
+            `<li>
+              ${escapeHtml(item.name || "Product")}
+              -
+              ₹${Number(item.price || 0)}
+            </li>`
+          )
+          .join("");
+
+
+          const div=
+          document
+          .createElement("div");
+
+          div.className="order";
+
+
+          div.innerHTML=`
+
+            <h4>
+              📦 Order #${doc.id}
+            </h4>
+
+            <p>
+              <b>Customer Mobile:</b>
+              ${escapeHtml(o.phone || "-")}
+            </p>
+
+            <p>
+              <b>Address:</b>
+              ${escapeHtml(o.address || "-")}
+            </p>
+
+            <p>
+              <b>Payment:</b>
+              COD
+            </p>
+
+            <p>
+              <b>Status:</b>
+              <span class="badge">
+                ${escapeHtml(o.status || "New")}
+              </span>
+            </p>
+
+            <p>
+              <b>Items:</b>
+            </p>
+
+            <ul>
+              ${itemsHtml}
+            </ul>
+
+            <button
+              onclick="updateOrder('${doc.id}','Confirmed')"
+            >
+              ✅ CONFIRM
+            </button>
+
+            <button
+              class="blue"
+              onclick="updateOrder('${doc.id}','Out for Delivery')"
+            >
+              🚚 OUT FOR DELIVERY
+            </button>
+
+            <button
+              class="orange"
+              onclick="updateOrder('${doc.id}','Delivered')"
+            >
+              ✅ DELIVERED
+            </button>
+
+            <button
+              class="red"
+              onclick="updateOrder('${doc.id}','Cancelled')"
+            >
+              ❌ CANCEL
+            </button>
+
+          `;
+
+
+          list.appendChild(div);
+
+        }
+      );
+
+
+      if(snapshot.empty){
+
+        list.innerHTML=
+        "<p>No orders yet.</p>";
+
+      }
+
+
+      document
+      .getElementById("newOrders")
+      .innerText=newCount;
+
+      document
+      .getElementById("totalOrders")
+      .innerText=snapshot.size;
+
+      document
+      .getElementById("ceoOrders")
+      .innerText=snapshot.size;
+
+    },
+
+    error=>{
+
+      console.error(
+        "Order listener:",
+        error
+      );
+
+    }
+  );
+
+}
+
+
+/* =====================================================
+   UPDATE ORDER
+===================================================== */
+
+async function updateOrder(
+  orderId,
+  status
+){
+
+  try{
+
+    await db
+    .collection("orders")
+    .doc(orderId)
+    .update({
+
+      status:status,
+
+      updatedAt:
+      firebase.firestore
+      .FieldValue
+      .serverTimestamp()
+
+    });
+
+
+    showMessage(
+      "Order status: "+
+      status+
+      " ✅"
+    );
+
+
+  }catch(error){
+
+    console.error(error);
+
+    alert(
+      "Order update error: "+
+      error.message
+    );
+
+  }
+
+}
+
+
+/* =====================================================
+   SHOPS COUNT
+===================================================== */
+
+function listenShops(){
+
+  db
+  .collection("shops")
+  .onSnapshot(
+    snapshot=>{
+
+      document
+      .getElementById("totalShops")
+      .innerText=snapshot.size;
+
+      document
+      .getElementById("ceoShops")
+      .innerText=snapshot.size;
+
+    }
+  );
+
+}
+
+
+/* =====================================================
+   ALL DATA
+===================================================== */
+
+function loadAllData(){
+
+  listenProducts();
+
+  listenOrders();
+
+  listenShops();
+
+}
+
+
+/* =====================================================
+   DUTY
+===================================================== */
+
+let dutyStart=null;
+
+
+function dutyIn(){
+
+  dutyStart=new Date();
+
+  document
+  .getElementById("workHour")
+  .innerHTML=
+  "<b>Working Hours:</b> Duty Active 🟢";
+
+  showMessage(
+    "Duty IN recorded ✅"
+  );
+
+}
+
+
+function dutyOut(){
+
+  if(!dutyStart){
+
+    alert(
+      "Pehle DUTY IN karo"
+    );
+
+    return;
+  }
+
+
+  const end=
+  new Date();
+
+
+  const diff=
+  end-dutyStart;
+
+
+  const hours=
+  Math.floor(
+    diff/3600000
+  );
+
+  const minutes=
+  Math.floor(
+    (diff%3600000)/60000
+  );
+
+
+  document
+  .getElementById("workHour")
+  .innerHTML=
+  `<b>Working Hours:</b>
+  ${hours}h ${minutes}m`;
+
+
+  showMessage(
+    "Duty OFF recorded ✅"
+  );
+
+}
+
+
+/* =====================================================
+   BASIC HTML ESCAPE
+===================================================== */
+
+function escapeHtml(value){
+
+  return String(value)
+  .replace(/&/g,"&amp;")
+  .replace(/</g,"&lt;")
+  .replace(/>/g,"&gt;")
+  .replace(/"/g,"&quot;")
+  .replace(/'/g,"&#039;");
+
+}
+
 </script>
+
 </body>
 </html>
