@@ -1,11 +1,22 @@
 {
-  "name": "VAISHNAV TEAM PANEL",
-  "short_name": "Team Panel",
-  "start_url": "index.html",
+  "name": "AIO DIGITAL MALL TEAM",
+  "short_name": "AIO TEAM",
+  "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#111",
-  "theme_color": "#FF6600",
+  "background_color": "#111111",
+  "theme_color": "#ff6600",
+  "orientation": "portrait",
   "icons": [
-    {"src": "https://via.placeholder.com/192/111/FF6600", "sizes": "192x192", "type": "image/png"}
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
   ]
 }
