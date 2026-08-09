@@ -1,0 +1,131 @@
+rules_version = '2';
+
+service cloud.firestore {
+
+  match /databases/{database}/documents {
+
+    // ==================================================
+    // TEAM CHECK
+    // ==================================================
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isTeam() {
+      return signedIn()
+        && exists(
+          /databases/$(database)/documents/teamUsers/$(request.auth.uid)
+        );
+    }
+
+    // ==================================================
+    // PRODUCTS
+    // ==================================================
+
+    match /products/{productId} {
+
+      // Customer can read products
+      allow read: if true;
+
+      // Only Team can create/update/delete
+      allow create, update, delete:
+        if isTeam();
+
+    }
+
+    // ==================================================
+    // SHOPS
+    // ==================================================
+
+    match /shops/{shopId} {
+
+      allow read: if true;
+
+      allow create, update, delete:
+        if isTeam();
+
+    }
+
+    // ==================================================
+    // BANNER
+    // ==================================================
+
+    match /banner/{bannerId} {
+
+      allow read: if true;
+
+      allow create, update, delete:
+        if isTeam();
+
+    }
+
+    // ==================================================
+    // ORDERS
+    // ==================================================
+
+    match /orders/{orderId} {
+
+      // Customer can create own order
+      allow create:
+        if signedIn()
+        && request.resource.data.customerId
+          == request.auth.uid;
+
+      // Customer can read own order
+      allow read:
+        if signedIn()
+        &&
+        (
+          resource.data.customerId
+            == request.auth.uid
+          ||
+          isTeam()
+        );
+
+      // Team manages orders
+      allow update, delete:
+        if isTeam();
+
+    }
+
+    // ==================================================
+    // TEAM USERS
+    // ==================================================
+
+    match /teamUsers/{uid} {
+
+      // Team can read team accounts
+      allow read:
+        if isTeam();
+
+      // Important:
+      // Team accounts should be created manually
+      // from Firebase Console.
+      allow create, update, delete:
+        if false;
+
+    }
+
+    // ==================================================
+    // ATTENDANCE
+    // ==================================================
+
+    match /attendance/{attendanceId} {
+
+      allow create:
+        if signedIn()
+        &&
+        request.resource.data.uid
+          == request.auth.uid;
+
+      allow read:
+        if isTeam();
+
+      allow update, delete:
+        if isTeam();
+
+    }
+
+  }
+}
