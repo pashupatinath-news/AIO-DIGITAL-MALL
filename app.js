@@ -1,9 +1,7 @@
-// =====================================================
-// AIO DIGITAL MALL - MAIN ROOT APP.JS
-// Firebase + Login + Products + Cart + COD Orders
-// =====================================================
-
-// ================= FIREBASE CONFIG ====================
+// ======================================================
+// AIO DIGITAL MALL
+// CUSTOMER APP + WEBSITE
+// ======================================================
 
 const firebaseConfig = {
   apiKey: "AIzaSyAyH9RRJTEETFh4zHWwCMO4d6qMielJQFA",
@@ -15,7 +13,6 @@ const firebaseConfig = {
   measurementId: "G-TNDT9FYNRP"
 };
 
-// Firebase initialize
 if (!firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
 }
@@ -23,260 +20,245 @@ if (!firebase.apps.length) {
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-
-// =====================================================
-// HELPER
-// =====================================================
-
 const $ = id => document.getElementById(id);
-
-
-// =====================================================
-// PHONE OTP LOGIN
-// =====================================================
 
 let confirmationResult = null;
 let recaptchaVerifier = null;
+let cart = JSON.parse(localStorage.getItem("aio_cart") || "[]");
+let allLocalProducts = [];
+let timerSeconds = 10799;
+
+// ======================================================
+// SECURITY HELPERS
+// ======================================================
+
+function escapeHTML(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+// ======================================================
+// LOGIN
+// ======================================================
+
+function openLogin() {
+  $("loginModal").style.display = "flex";
+}
+
+function closeLogin() {
+  $("loginModal").style.display = "none";
+}
 
 function setupRecaptcha() {
 
   if (!$("recaptcha")) return;
-
   if (recaptchaVerifier) return;
 
-  recaptchaVerifier = new firebase.auth.RecaptchaVerifier(
-    "recaptcha",
-    {
-      size: "invisible"
-    }
-  );
+  recaptchaVerifier =
+    new firebase.auth.RecaptchaVerifier(
+      "recaptcha",
+      {
+        size: "invisible"
+      }
+    );
 
   recaptchaVerifier.render();
 }
 
+async function sendOTP() {
 
-// Send OTP
-function sendOTP() {
+  try {
 
-  setupRecaptcha();
+    setupRecaptcha();
 
-  const phoneNumber = $("phone")?.value.trim();
+    const phone = $("phone").value.trim();
 
-  if (!phoneNumber) {
-    alert("Mobile number daalo");
-    return;
-  }
+    if (!phone) {
+      alert("Mobile number daalo");
+      return;
+    }
 
-  if (!phoneNumber.startsWith("+")) {
-    alert("Number country code ke saath daalo.\nExample: +919876543210");
-    return;
-  }
+    if (!phone.startsWith("+")) {
+      alert("Country code ke saath number daalo");
+      return;
+    }
 
-  auth.signInWithPhoneNumber(
-    phoneNumber,
-    recaptchaVerifier
-  )
-  .then(result => {
-
-    confirmationResult = result;
+    confirmationResult =
+      await auth.signInWithPhoneNumber(
+        phone,
+        recaptchaVerifier
+      );
 
     alert("OTP Bhej diya ✅");
 
-  })
-  .catch(error => {
+  } catch (error) {
 
     console.error(error);
 
-    alert("OTP error: " + error.message);
+    alert(
+      "OTP error:\n" +
+      error.message
+    );
 
-  });
+    if (recaptchaVerifier) {
+      try {
+        recaptchaVerifier.clear();
+      } catch (_) {}
+
+      recaptchaVerifier = null;
+    }
+  }
 }
 
+async function verifyOTP() {
 
-// Verify OTP
-function verifyOTP() {
+  try {
 
-  const otp = $("otp")?.value.trim();
+    const otp = $("otp").value.trim();
 
-  if (!confirmationResult) {
-    alert("Pehle OTP bhejo");
-    return;
+    if (!confirmationResult) {
+      alert("Pehle OTP bhejo");
+      return;
+    }
+
+    if (!otp) {
+      alert("OTP daalo");
+      return;
+    }
+
+    const result =
+      await confirmationResult.confirm(otp);
+
+    alert(
+      "Login Ho Gaya ✅\n" +
+      (result.user.phoneNumber || "")
+    );
+
+    closeLogin();
+
+  } catch (error) {
+
+    console.error(error);
+    alert("Galat OTP ❌");
+
   }
-
-  if (!otp) {
-    alert("OTP daalo");
-    return;
-  }
-
-  confirmationResult.confirm(otp)
-    .then(result => {
-
-      console.log("Logged in:", result.user);
-
-      alert("Login Ho Gaya ✅");
-
-      if ($("loginBox")) {
-        $("loginBox").style.display = "none";
-      }
-
-    })
-    .catch(error => {
-
-      console.error(error);
-
-      alert("Galat OTP ❌");
-
-    });
 }
 
-
-// Auth state
 auth.onAuthStateChanged(user => {
 
   if (user) {
 
     console.log(
-      "Customer Login:",
+      "Customer logged in:",
       user.phoneNumber || user.uid
     );
 
   } else {
 
-    console.log("Customer Not Logged In");
+    console.log("Customer not logged in");
 
   }
 
 });
 
+// ======================================================
+// PRODUCTS
+// ======================================================
 
-// =====================================================
-// PRODUCT RENDER
-// =====================================================
+function productImage(p) {
 
-function renderLocalProducts(snapshot) {
+  return (
+    p.photo ||
+    p.image ||
+    "https://via.placeholder.com/500x400?text=Product"
+  );
+}
+
+function renderLocalProducts(products) {
 
   const container = $("localProducts");
 
   if (!container) return;
 
-  if (snapshot.empty) {
+  if (!products.length) {
 
     container.innerHTML =
-      "<p style='padding:10px'>Abhi local products available nahi hain.</p>";
+      "<p>Product nahi mila.</p>";
 
     return;
   }
 
-  container.innerHTML = snapshot.docs.map(doc => {
+  container.innerHTML =
+    products.map(item => {
 
-    const p = doc.data();
+      const p = item.data;
+      const id = item.id;
 
-    const photo =
-      p.photo ||
-      p.image ||
-      "https://via.placeholder.com/300x200?text=Product";
+      const name =
+        p.name || "Product";
 
-    const name =
-      p.name || "Product";
+      const price =
+        Number(p.price || 0);
 
-    const price =
-      Number(p.price || 0);
+      const stock =
+        Number(
+          p.stock === undefined
+            ? 1
+            : p.stock
+        );
 
-    return `
-      <div class="card">
+      return `
+        <div class="card">
 
-        <img
-          src="${photo}"
-          alt="${escapeHTML(name)}"
-        >
+          <img
+            src="${escapeHTML(productImage(p))}"
+            alt="${escapeHTML(name)}"
+          >
 
-        <h4>${escapeHTML(name)}</h4>
+          <h3>${escapeHTML(name)}</h3>
 
-        <p>₹${price}</p>
+          <div class="price">
+            ₹${price}
+          </div>
 
-        ${
-          p.stock === 0
-          ? `<button class="btn" disabled>OUT OF STOCK</button>`
-          : `<button
+          <div class="stock">
+            ${stock > 0
+              ? "Stock Available"
+              : "OUT OF STOCK"}
+          </div>
+
+          ${
+            stock > 0
+            ?
+            `
+            <button
               class="btn"
-              onclick="addCart('${doc.id}', '${escapeJS(name)}', ${price})"
+              onclick="addCart(
+                '${id}',
+                ${JSON.stringify(name)},
+                ${price}
+              )"
             >
               ADD TO CART
-            </button>`
-        }
+            </button>
+            `
+            :
+            `
+            <button disabled>
+              OUT OF STOCK
+            </button>
+            `
+          }
 
-      </div>
-    `;
+        </div>
+      `;
 
-  }).join("");
+    }).join("");
 }
-
-
-// =====================================================
-// AFFILIATE PRODUCTS
-// =====================================================
-
-function renderAffiliateProducts(snapshot) {
-
-  const container = $("affiliateProducts");
-
-  if (!container) return;
-
-  if (snapshot.empty) {
-
-    container.innerHTML =
-      "<p style='padding:10px'>Amazon deals abhi available nahi hain.</p>";
-
-    return;
-  }
-
-  container.innerHTML = snapshot.docs.map(doc => {
-
-    const p = doc.data();
-
-    const photo =
-      p.photo ||
-      p.image ||
-      "https://via.placeholder.com/300x200?text=Amazon";
-
-    const name =
-      p.name || "Amazon Product";
-
-    const price =
-      Number(p.price || 0);
-
-    const link =
-      p.link || "#";
-
-    return `
-      <div class="card affiliate">
-
-        <img
-          src="${photo}"
-          alt="${escapeHTML(name)}"
-        >
-
-        <h4>${escapeHTML(name)}</h4>
-
-        <p>₹${price}</p>
-
-        <button
-          class="btn"
-          onclick="window.open('${escapeJS(link)}','_blank')"
-        >
-          BUY ON AMAZON
-        </button>
-
-      </div>
-    `;
-
-  }).join("");
-}
-
-
-// =====================================================
-// LOAD LOCAL PRODUCTS
-// =====================================================
 
 function loadLocalProducts() {
 
@@ -286,23 +268,32 @@ function loadLocalProducts() {
 
       snapshot => {
 
-        renderLocalProducts(snapshot);
+        allLocalProducts =
+          snapshot.docs.map(doc => ({
+            id: doc.id,
+            data: doc.data()
+          }));
+
+        renderLocalProducts(
+          allLocalProducts
+        );
 
       },
 
       error => {
 
-        console.error("Local product error:", error);
+        console.error(
+          "Products error:",
+          error
+        );
+
+        $("localProducts").innerHTML =
+          "<p>Products load nahi ho paaye.</p>";
 
       }
 
     );
 }
-
-
-// =====================================================
-// LOAD AFFILIATE PRODUCTS
-// =====================================================
 
 function loadAffiliateProducts() {
 
@@ -312,70 +303,191 @@ function loadAffiliateProducts() {
 
       snapshot => {
 
-        renderAffiliateProducts(snapshot);
+        const container =
+          $("affiliateProducts");
 
-      },
+        if (!container) return;
 
-      error => {
+        if (snapshot.empty) {
 
-        console.error("Affiliate product error:", error);
+          container.innerHTML =
+            "<p>Amazon deals available nahi hain.</p>";
 
-      }
-
-    );
-}
-
-
-// =====================================================
-// BANNER
-// =====================================================
-
-function loadMainBanner() {
-
-  if (!$("mainBanner")) return;
-
-  db.collection("banner")
-    .doc("main")
-    .onSnapshot(
-
-      doc => {
-
-        if (doc.exists) {
-
-          const data = doc.data();
-
-          if (data.url) {
-
-            $("mainBanner").style.backgroundImage =
-              `url("${data.url}")`;
-
-          }
-
+          return;
         }
 
+        container.innerHTML =
+          snapshot.docs.map(doc => {
+
+            const p = doc.data();
+
+            const name =
+              p.name || "Amazon Product";
+
+            const price =
+              Number(p.price || 0);
+
+            const link =
+              p.link || "#";
+
+            return `
+              <div class="card">
+
+                <img
+                  src="${escapeHTML(productImage(p))}"
+                  alt="${escapeHTML(name)}"
+                >
+
+                <h3>
+                  ${escapeHTML(name)}
+                </h3>
+
+                <div class="price">
+                  ₹${price}
+                </div>
+
+                <button
+                  class="btn"
+                  onclick="window.open(
+                    ${JSON.stringify(link)},
+                    '_blank',
+                    'noopener'
+                  )"
+                >
+                  BUY ON AMAZON
+                </button>
+
+              </div>
+            `;
+
+          }).join("");
+
       },
 
       error => {
 
-        console.error("Banner error:", error);
+        console.error(
+          "Affiliate error:",
+          error
+        );
 
       }
 
     );
 }
 
+// ======================================================
+// CATEGORY
+// ======================================================
 
-// =====================================================
+function filterCategory(category) {
+
+  const filtered =
+    allLocalProducts.filter(item => {
+
+      const p = item.data;
+
+      return String(
+        p.category || ""
+      ).toLowerCase() ===
+      category.toLowerCase();
+
+    });
+
+  renderLocalProducts(filtered);
+
+  window.scrollTo({
+    top: $("localProducts").offsetTop - 70,
+    behavior: "smooth"
+  });
+}
+
+// ======================================================
+// SEARCH
+// ======================================================
+
+function searchProducts() {
+
+  const value =
+    $("search").value
+      .trim()
+      .toLowerCase();
+
+  if (!value) {
+
+    renderLocalProducts(
+      allLocalProducts
+    );
+
+    return;
+  }
+
+  const filtered =
+    allLocalProducts.filter(item => {
+
+      const p = item.data;
+
+      return (
+        String(p.name || "")
+          .toLowerCase()
+          .includes(value)
+        ||
+        String(p.category || "")
+          .toLowerCase()
+          .includes(value)
+      );
+
+    });
+
+  renderLocalProducts(filtered);
+}
+
+// ======================================================
 // CART
-// =====================================================
+// ======================================================
 
-let cart =
-  JSON.parse(
-    localStorage.getItem("aio_cart")
-  ) || [];
+function saveCart() {
 
+  localStorage.setItem(
+    "aio_cart",
+    JSON.stringify(cart)
+  );
 
-// Update cart UI
+}
+
+function addCart(id, name, price) {
+
+  cart.push({
+    id,
+    name,
+    price: Number(price)
+  });
+
+  saveCart();
+  updateCartUI();
+
+  alert(
+    name +
+    " Cart me add ho gaya ✅"
+  );
+}
+
+function removeCart(index) {
+
+  cart.splice(index, 1);
+
+  saveCart();
+  updateCartUI();
+}
+
+function toggleCart() {
+
+  $("cartBox").scrollIntoView({
+    behavior: "smooth"
+  });
+
+}
+
 function updateCartUI() {
 
   const count = $("cartCount");
@@ -384,7 +496,8 @@ function updateCartUI() {
 
   if (count) {
 
-    count.innerText = cart.length;
+    count.innerText =
+      cart.length;
 
   }
 
@@ -399,122 +512,86 @@ function updateCartUI() {
 
   }
 
-  if (items) {
+  if (!items) return;
 
-    if (cart.length === 0) {
-
-      items.innerHTML =
-        "<p>Cart khali hai.</p>";
-
-      return;
-
-    }
+  if (!cart.length) {
 
     items.innerHTML =
-      cart.map((item, index) => {
+      "<p>Cart khali hai.</p>";
 
-        return `
-          <div style="
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            padding:8px;
-            border-bottom:1px solid #ddd;
-          ">
-
-            <span>
-              ${escapeHTML(item.name)}
-              - ₹${Number(item.price)}
-            </span>
-
-            <button
-              onclick="removeCart(${index})"
-              style="
-                background:red;
-                color:white;
-                border:none;
-                padding:5px 8px;
-                border-radius:5px;
-              "
-            >
-              X
-            </button>
-
-          </div>
-        `;
-
-      }).join("");
-
+    return;
   }
 
+  items.innerHTML =
+    cart.map((item, index) => {
+
+      return `
+        <div style="
+          display:flex;
+          justify-content:space-between;
+          align-items:center;
+          gap:10px;
+          padding:10px 0;
+          border-bottom:1px solid #ddd;
+        ">
+
+          <span>
+            ${escapeHTML(item.name)}
+            - ₹${Number(item.price)}
+          </span>
+
+          <button
+            onclick="removeCart(${index})"
+            style="
+              background:red;
+              color:white;
+            "
+          >
+            X
+          </button>
+
+        </div>
+      `;
+
+    }).join("");
 }
 
-
-// Add product
-function addCart(id, name, price) {
-
-  cart.push({
-
-    id: id,
-
-    name: name,
-
-    price: Number(price)
-
-  });
-
-  localStorage.setItem(
-    "aio_cart",
-    JSON.stringify(cart)
-  );
-
-  updateCartUI();
-
-  alert(
-    name + " Cart me add ho gaya ✅"
-  );
-
-}
-
-
-// Remove product
-function removeCart(index) {
-
-  cart.splice(index, 1);
-
-  localStorage.setItem(
-    "aio_cart",
-    JSON.stringify(cart)
-  );
-
-  updateCartUI();
-
-}
-
-
-// =====================================================
+// ======================================================
 // COD ORDER
-// =====================================================
+// ======================================================
 
 async function placeOrder() {
 
-  if (cart.length === 0) {
+  if (!cart.length) {
 
     alert("Cart khali hai ❌");
+    return;
 
+  }
+
+  const user =
+    auth.currentUser;
+
+  if (!user) {
+
+    alert(
+      "Order place karne ke liye pehle login karo."
+    );
+
+    openLogin();
     return;
 
   }
 
   const phone =
     prompt(
-      "Mobile number daalo"
+      "Delivery mobile number daalo",
+      user.phoneNumber || ""
     );
 
   if (!phone) {
 
     alert("Mobile number required hai");
-
     return;
 
   }
@@ -527,21 +604,17 @@ async function placeOrder() {
   if (!address) {
 
     alert("Address required hai");
-
     return;
 
   }
 
-
-  // COD only
-  const paymentMethod = "COD";
-
   const deliveryOTP =
-    Math.floor(
-      1000 +
-      Math.random() * 9000
-    ).toString();
-
+    String(
+      Math.floor(
+        1000 +
+        Math.random() * 9000
+      )
+    );
 
   const total =
     cart.reduce(
@@ -550,78 +623,59 @@ async function placeOrder() {
       0
     );
 
-
   try {
 
     const orderData = {
 
+      customerId: user.uid,
+
+      customerPhone:
+        user.phoneNumber || "",
+
+      phone,
+
+      address,
+
       items: cart,
 
-      phone: phone,
+      total,
 
-      address: address,
-
-      total: total,
-
-      paymentMethod: paymentMethod,
+      paymentMethod: "COD",
 
       status: "NEW",
 
-      deliveryOTP: deliveryOTP,
+      deliveryOTP,
 
       createdAt:
-        firebase.firestore.FieldValue.serverTimestamp()
+        firebase.firestore
+          .FieldValue
+          .serverTimestamp()
 
     };
 
-
-    const orderRef =
+    const ref =
       await db
         .collection("orders")
         .add(orderData);
 
-
-    console.log(
-      "Order ID:",
-      orderRef.id
-    );
-
-
-    // Clear cart
     cart = [];
 
-    localStorage.removeItem(
-      "aio_cart"
-    );
-
+    saveCart();
     updateCartUI();
 
-
     alert(
-      "Order Successfully Place Ho Gaya ✅\n\n" +
-      "Payment: CASH ON DELIVERY\n" +
+      "ORDER SUCCESSFULLY PLACE HO GAYA ✅\n\n" +
+      "Payment: CASH ON DELIVERY\n\n" +
       "Order ID: " +
-      orderRef.id +
+      ref.id +
       "\n\n" +
       "Delivery OTP: " +
       deliveryOTP
     );
 
+  } catch (error) {
 
-    if ($("cartBox")) {
-
-      $("cartBox").style.display =
-        "none";
-
-    }
-
-  }
-  catch (error) {
-
-    console.error(
-      "Order error:",
-      error
-    );
+    console.error(error);
 
     alert(
       "Order place nahi hua ❌\n" +
@@ -629,251 +683,116 @@ async function placeOrder() {
     );
 
   }
-
 }
 
+// ======================================================
+// BANNER
+// ======================================================
 
-// =====================================================
-// SEARCH
-// =====================================================
+function loadMainBanner() {
 
-let searchTimer = null;
+  const banner =
+    $("mainBanner");
 
-function searchProducts() {
+  if (!banner) return;
 
-  clearTimeout(searchTimer);
+  db.collection("banner")
+    .doc("main")
+    .onSnapshot(
 
-  searchTimer =
-    setTimeout(() => {
+      doc => {
 
-      const input =
-        $("search");
+        if (!doc.exists) return;
 
-      if (!input) return;
+        const data =
+          doc.data();
 
-      const value =
-        input.value
-          .trim()
-          .toLowerCase();
+        if (data.url) {
 
+          banner.style.backgroundImage =
+            `url("${data.url}")`;
 
-      if (!value) {
+        }
 
-        loadLocalProducts();
+      },
 
-        return;
+      error => {
+
+        console.error(
+          "Banner error:",
+          error
+        );
 
       }
 
-
-      db.collection("products")
-        .where("type", "==", "local")
-        .get()
-        .then(snapshot => {
-
-          const container =
-            $("localProducts");
-
-          if (!container) return;
-
-          const filtered =
-            snapshot.docs.filter(doc => {
-
-              const data =
-                doc.data();
-
-              const name =
-                String(
-                  data.name || ""
-                ).toLowerCase();
-
-              return name.includes(value);
-
-            });
-
-
-          if (filtered.length === 0) {
-
-            container.innerHTML =
-              "<p style='padding:10px'>Product nahi mila.</p>";
-
-            return;
-
-          }
-
-
-          container.innerHTML =
-            filtered.map(doc => {
-
-              const p =
-                doc.data();
-
-              const photo =
-                p.photo ||
-                p.image ||
-                "https://via.placeholder.com/300x200?text=Product";
-
-              const name =
-                p.name || "Product";
-
-              const price =
-                Number(p.price || 0);
-
-
-              return `
-                <div class="card">
-
-                  <img
-                    src="${photo}"
-                    alt="${escapeHTML(name)}"
-                  >
-
-                  <h4>${escapeHTML(name)}</h4>
-
-                  <p>₹${price}</p>
-
-                  <button
-                    class="btn"
-                    onclick="addCart(
-                      '${doc.id}',
-                      '${escapeJS(name)}',
-                      ${price}
-                    )"
-                  >
-                    ADD TO CART
-                  </button>
-
-                </div>
-              `;
-
-            }).join("");
-
-        })
-        .catch(error => {
-
-          console.error(
-            "Search error:",
-            error
-          );
-
-        });
-
-    }, 300);
-
+    );
 }
 
-
-// =====================================================
-// FLASH SALE TIMER
-// =====================================================
-
-let time = 10799;
+// ======================================================
+// TIMER
+// ======================================================
 
 setInterval(() => {
 
-  if (!$("timer")) return;
+  if (timerSeconds <= 0) {
 
-  if (time <= 0) {
-
-    time = 10799;
+    timerSeconds = 10799;
 
   }
 
-  time--;
+  timerSeconds--;
 
   const h =
     Math.floor(
-      time / 3600
+      timerSeconds / 3600
     );
 
   const m =
     Math.floor(
-      (time % 3600) / 60
+      (timerSeconds % 3600) / 60
     );
 
   const s =
-    time % 60;
+    timerSeconds % 60;
 
+  if ($("timer")) {
 
-  $("timer").innerText =
-    `${String(h).padStart(2, "0")}:` +
-    `${String(m).padStart(2, "0")}:` +
-    `${String(s).padStart(2, "0")}`;
+    $("timer").innerText =
+      String(h).padStart(2, "0") +
+      ":" +
+      String(m).padStart(2, "0") +
+      ":" +
+      String(s).padStart(2, "0");
+
+  }
 
 }, 1000);
 
-
-// =====================================================
-// HTML SAFETY HELPERS
-// =====================================================
-
-function escapeHTML(value) {
-
-  return String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-
-}
-
-
-function escapeJS(value) {
-
-  return String(value)
-    .replace(/\\/g, "\\\\")
-    .replace(/'/g, "\\'")
-    .replace(/\n/g, "\\n")
-    .replace(/\r/g, "");
-
-}
-
-
-// =====================================================
-// SERVICE WORKER
-// =====================================================
-
-if ("serviceWorker" in navigator) {
-
-  navigator.serviceWorker
-    .register("sw.js")
-    .then(() => {
-
-      console.log(
-        "Service Worker registered ✅"
-      );
-
-    })
-    .catch(error => {
-
-      console.error(
-        "Service Worker error:",
-        error
-      );
-
-    });
-
-}
-
-
-// =====================================================
-// START APP
-// =====================================================
+// ======================================================
+// START
+// ======================================================
 
 document.addEventListener(
   "DOMContentLoaded",
   () => {
 
     updateCartUI();
-
     setupRecaptcha();
-
     loadLocalProducts();
-
     loadAffiliateProducts();
-
     loadMainBanner();
 
   }
 );
+
+// ======================================================
+// SERVICE WORKER
+// ======================================================
+
+if ("serviceWorker" in navigator) {
+
+  navigator.serviceWorker
+    .register("sw.js")
+    .catch(console.error);
+
+}
