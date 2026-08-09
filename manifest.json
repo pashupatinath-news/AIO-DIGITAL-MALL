@@ -1,12 +1,8 @@
 {
-  "name": "VAISHNAV DIGITAL MALL",
-  "short_name": "Vaishnav Mall",
-  "start_url": "index.html",
+  "name": "AIO DIGITAL MALL",
+  "short_name": "AIO MALL",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#FFF8F0",
-  "theme_color": "#FF6600",
-  "icons": [
-    {"src": "https://via.placeholder.com/192/FF6600/fff", "sizes": "192x192", "type": "image/png"},
-    {"src": "https://via.placeholder.com/512/FF6600/fff", "sizes": "512x512", "type": "image/png"}
-  ]
+  "theme_color": "#FF6600"
 }
