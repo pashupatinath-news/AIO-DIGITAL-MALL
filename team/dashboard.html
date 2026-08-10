@@ -3,25 +3,196 @@
 
 <head>
 
-<meta charset="UTF-8">
+  <meta charset="UTF-8">
 
-<meta
-  name="viewport"
-  content="width=device-width, initial-scale=1.0">
+  <meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+  >
 
-<title>AIO DIGITAL MALL — Dashboard</title>
+  <meta
+    name="theme-color"
+    content="#ff6600"
+  >
 
-<meta
-  http-equiv="refresh"
-  content="0;url=index.html">
+  <title>AIO DIGITAL MALL - Dashboard</title>
+
+  <style>
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial,sans-serif;
+      background: #111;
+      color: white;
+    }
+
+    header {
+      background: #ff6600;
+      padding: 16px;
+    }
+
+    main {
+      max-width: 1200px;
+      margin: auto;
+      padding: 15px;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns:
+        repeat(auto-fit,minmax(160px,1fr));
+      gap: 12px;
+    }
+
+    .stat {
+      background: #222;
+      padding: 20px;
+      border-radius: 14px;
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 30px;
+      color: #ff8a3d;
+    }
+
+    .actions {
+      background: #1d1d1d;
+      padding: 20px;
+      margin-top: 20px;
+      border-radius: 14px;
+    }
+
+    button {
+      border: 0;
+      padding: 12px 16px;
+      margin: 5px;
+      border-radius: 8px;
+      background: #ff6600;
+      color: white;
+      font-weight: bold;
+    }
+
+  </style>
 
 </head>
 
 <body>
 
-<p>
-Opening Team Dashboard...
-</p>
+<header>
+  <h2>🚩 AIO DIGITAL MALL</h2>
+  <small>Team Dashboard</small>
+</header>
+
+<main>
+
+  <div class="stats">
+
+    <div class="stat">
+      Orders
+      <strong id="orders">0</strong>
+    </div>
+
+    <div class="stat">
+      New
+      <strong id="newOrders">0</strong>
+    </div>
+
+    <div class="stat">
+      Products
+      <strong id="products">0</strong>
+    </div>
+
+    <div class="stat">
+      Shops
+      <strong id="shops">0</strong>
+    </div>
+
+  </div>
+
+  <div class="actions">
+
+    <h2>Quick Actions</h2>
+
+    <button
+      onclick="location.href='dashboard-panel.html'"
+    >
+      MANAGE EVERYTHING
+    </button>
+
+    <button
+      onclick="location.href='index.html'"
+    >
+      TEAM HOME
+    </button>
+
+    <button
+      onclick="window.open('../coustemer/index.html','_blank')"
+    >
+      CUSTOMER APP
+    </button>
+
+    <button onclick="location.reload()">
+      🔄 REFRESH
+    </button>
+
+  </div>
+
+</main>
+
+<script type="module">
+
+import {
+  db
+} from "./firebaseConfig.js";
+
+import {
+  collection,
+  onSnapshot
+} from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
+
+onSnapshot(
+  collection(db,"orders"),
+  snap => {
+
+    document.getElementById(
+      "orders"
+    ).textContent = snap.size;
+
+    document.getElementById(
+      "newOrders"
+    ).textContent =
+      snap.docs.filter(
+        d => d.data().status === "NEW"
+      ).length;
+  }
+);
+
+onSnapshot(
+  collection(db,"products"),
+  snap => {
+
+    document.getElementById(
+      "products"
+    ).textContent = snap.size;
+  }
+);
+
+onSnapshot(
+  collection(db,"shops"),
+  snap => {
+
+    document.getElementById(
+      "shops"
+    ).textContent = snap.size;
+  }
+);
+
+</script>
 
 </body>
 
