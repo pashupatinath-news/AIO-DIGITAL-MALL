@@ -2,397 +2,1430 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <meta name="theme-color" content="#ff6600">
-  <link rel="manifest" href="manifest.json">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0"
+  >
+
+  <meta
+    name="theme-color"
+    content="#ff6600"
+  >
+
+  <meta
+    name="description"
+    content="AIO DIGITAL MALL - Shops, Products, Offers and Delivery"
+  >
 
   <title>AIO DIGITAL MALL</title>
 
+  <link
+    rel="manifest"
+    href="./manifest.json"
+  >
+
+  <link
+    rel="icon"
+    href="./icon-192.png"
+  >
+
   <style>
+
+    /* =====================================================
+       RESET
+    ===================================================== */
+
     * {
       box-sizing: border-box;
+      margin: 0;
+      padding: 0;
     }
 
     body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: #fff8f0;
-      color: #171717;
+      font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+      background: #f7f7f7;
+      color: #222;
+      min-height: 100vh;
     }
 
-    header {
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+
+    /* =====================================================
+       HEADER
+    ===================================================== */
+
+    .top-header {
       position: sticky;
       top: 0;
-      z-index: 100;
-      background: #111;
-      color: white;
-      padding: 14px 4%;
+      z-index: 1000;
+
+      background: #ffffff;
+      border-bottom: 1px solid #eeeeee;
+      padding: 12px 16px;
+    }
+
+    .header-row {
+      max-width: 1200px;
+      margin: auto;
+
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      gap: 10px;
+      gap: 15px;
     }
 
     .brand {
-      font-weight: 900;
-      font-size: 20px;
+      min-width: 220px;
     }
 
-    .actions {
-      display: flex;
-      align-items: center;
-      gap: 7px;
+    .brand h1 {
+      color: #ff6600;
+      font-size: 24px;
+      font-weight: 800;
     }
+
+    .brand small {
+      color: #666;
+      font-size: 12px;
+    }
+
+    .location-btn {
+      border: none;
+      background: #fff3e8;
+      color: #e85b00;
+      border-radius: 10px;
+      padding: 10px 12px;
+      white-space: nowrap;
+    }
+
+    .search-wrap {
+      flex: 1;
+      position: relative;
+    }
+
+    #searchInput {
+      width: 100%;
+      border: 1px solid #dddddd;
+      background: #f7f7f7;
+      border-radius: 12px;
+      padding: 13px 16px;
+      outline: none;
+    }
+
+    #searchInput:focus {
+      border-color: #ff6600;
+      background: #fff;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .header-btn {
+      border: 1px solid #eeeeee;
+      background: #fff;
+      border-radius: 10px;
+      padding: 10px 12px;
+      color: #333;
+    }
+
+    .cart-header-btn {
+      background: #ff6600;
+      color: #fff;
+      border: none;
+    }
+
+
+    /* =====================================================
+       MAIN
+    ===================================================== */
 
     main {
       max-width: 1200px;
       margin: auto;
-      padding: 18px;
+      padding: 18px 16px 100px;
     }
 
-    button {
+
+    /* =====================================================
+       HERO
+    ===================================================== */
+
+    .hero {
+      min-height: 240px;
+      border-radius: 18px;
+      overflow: hidden;
+
+      background:
+        linear-gradient(
+          135deg,
+          #ff6600,
+          #ff9d45
+        );
+
+      color: #fff;
+      padding: 35px;
+
+      display: flex;
+      align-items: center;
+      margin-bottom: 22px;
+    }
+
+    .hero-content {
+      max-width: 600px;
+    }
+
+    .hero h2 {
+      font-size: 36px;
+      margin-bottom: 10px;
+    }
+
+    .hero p {
+      font-size: 16px;
+      line-height: 1.5;
+      margin-bottom: 18px;
+    }
+
+    .hero-btn {
       border: none;
+      background: #fff;
+      color: #ff6600;
+      padding: 12px 18px;
       border-radius: 10px;
-      padding: 11px 15px;
-      cursor: pointer;
       font-weight: 700;
     }
 
-    .primary {
-      background: #ff6600;
-      color: white;
+
+    /* =====================================================
+       SECTION
+    ===================================================== */
+
+    .section {
+      margin-top: 25px;
     }
 
-    .secondary {
-      background: #eeeeee;
-      color: #111;
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 13px;
     }
 
-    .danger {
-      background: #e53935;
-      color: white;
+    .section-header h2 {
+      font-size: 21px;
     }
 
-    .hidden {
-      display: none !important;
+    .see-all {
+      color: #ff6600;
+      border: none;
+      background: transparent;
+      font-weight: 700;
     }
 
-    .hero {
-      min-height: 220px;
-      border-radius: 18px;
-      background: #ff6600 center/cover no-repeat;
+
+    /* =====================================================
+       CATEGORIES
+    ===================================================== */
+
+    .category-grid {
       display: grid;
-      place-items: center;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 10px;
+    }
+
+    .category-card {
+      background: #fff;
+      border: 1px solid #eeeeee;
+      border-radius: 14px;
+      padding: 15px 8px;
       text-align: center;
-      color: white;
-      padding: 20px;
+      transition: 0.2s;
     }
 
-    .hero h1 {
-      font-size: 38px;
-      margin: 0 0 10px;
+    .category-card:hover {
+      transform: translateY(-2px);
+      border-color: #ff6600;
     }
 
-    .search {
-      width: 100%;
-      padding: 14px;
-      margin: 18px 0;
-      border: 1px solid #ddd;
-      border-radius: 12px;
-      font-size: 16px;
+    .category-icon {
+      width: 50px;
+      height: 50px;
+      margin: auto auto 8px;
+
+      border-radius: 50%;
+      background: #fff3e8;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      font-size: 25px;
     }
 
-    .grid {
+    .category-card span {
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+
+    /* =====================================================
+       SHOP GRID
+    ===================================================== */
+
+    .shop-grid {
       display: grid;
-      grid-template-columns:
-        repeat(auto-fit, minmax(190px, 1fr));
+      grid-template-columns: repeat(4, 1fr);
       gap: 14px;
     }
 
-    section {
-      margin: 25px 0;
-    }
-
-    .card {
-      background: white;
-      border-radius: 16px;
+    .shop-card {
+      background: #fff;
+      border-radius: 14px;
       overflow: hidden;
-      box-shadow: 0 4px 18px #0001;
+      border: 1px solid #eeeeee;
     }
 
-    .card img {
+    .shop-image {
       width: 100%;
-      height: 180px;
+      height: 150px;
       object-fit: cover;
+      background: #eeeeee;
+    }
+
+    .shop-info {
+      padding: 13px;
+    }
+
+    .shop-info h3 {
+      font-size: 16px;
+      margin-bottom: 5px;
+    }
+
+    .shop-meta {
+      color: #777;
+      font-size: 12px;
+      margin-bottom: 10px;
+    }
+
+    .shop-open {
+      color: #159447;
+      font-weight: 700;
+    }
+
+    .shop-closed {
+      color: #d93025;
+      font-weight: 700;
+    }
+
+
+    /* =====================================================
+       PRODUCT GRID
+    ===================================================== */
+
+    .product-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 14px;
+    }
+
+    .product-card {
+      background: #fff;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid #eeeeee;
+      position: relative;
+    }
+
+    .product-image {
+      width: 100%;
+      height: 170px;
+      object-fit: cover;
+      background: #eeeeee;
+    }
+
+    .product-info {
+      padding: 12px;
+    }
+
+    .product-info h3 {
+      font-size: 15px;
+      margin-bottom: 6px;
+
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .product-price {
+      font-size: 17px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .product-rating {
+      font-size: 12px;
+      color: #777;
+      margin-bottom: 10px;
+    }
+
+    .add-btn {
+      width: 100%;
+      border: none;
+      background: #ff6600;
+      color: #fff;
+      border-radius: 8px;
+      padding: 9px;
+      font-weight: 700;
+    }
+
+    .add-btn:disabled {
+      background: #aaa;
+      cursor: not-allowed;
+    }
+
+
+    /* =====================================================
+       OFFER GRID
+    ===================================================== */
+
+    .offer-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+
+    .offer-card {
+      min-height: 130px;
+      border-radius: 15px;
+      padding: 20px;
+      color: #fff;
+      background:
+        linear-gradient(
+          135deg,
+          #ff6600,
+          #ff9d45
+        );
+    }
+
+    .offer-card h3 {
+      margin-bottom: 7px;
+    }
+
+
+    /* =====================================================
+       LOADING / EMPTY
+    ===================================================== */
+
+    .loading,
+    .empty {
+      background: #fff;
+      border-radius: 12px;
+      padding: 25px;
+      text-align: center;
+      color: #777;
+      grid-column: 1 / -1;
+    }
+
+
+    /* =====================================================
+       CART DRAWER
+    ===================================================== */
+
+    .cart-overlay {
+      position: fixed;
+      inset: 0;
+
+      background: rgba(0, 0, 0, 0.45);
+
+      z-index: 2000;
+
+      display: none;
+    }
+
+    .cart-overlay.active {
       display: block;
     }
 
-    .card-body {
-      padding: 14px;
+    .cart-drawer {
+      position: absolute;
+      top: 0;
+      right: 0;
+
+      width: min(430px, 100%);
+      height: 100%;
+
+      background: #fff;
+
+      display: flex;
+      flex-direction: column;
     }
 
-    .card-body button {
-      width: 100%;
-      margin-top: 12px;
+    .cart-header {
+      padding: 18px;
+      border-bottom: 1px solid #eeeeee;
+
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
+
+    .cart-header h2 {
+      font-size: 20px;
+    }
+
+    .close-btn {
+      border: none;
+      background: #f2f2f2;
+      border-radius: 8px;
+      padding: 8px 11px;
+    }
+
+    #cartItems {
+      flex: 1;
+      overflow-y: auto;
+      padding: 15px;
+    }
+
+    .cart-item {
+      display: flex;
+      gap: 10px;
+      padding: 12px 0;
+      border-bottom: 1px solid #eeeeee;
+    }
+
+    .cart-item-image {
+      width: 65px;
+      height: 65px;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+
+    .cart-item-info {
+      flex: 1;
+    }
+
+    .cart-item-name {
+      font-weight: 700;
+      margin-bottom: 5px;
+    }
+
+    .quantity-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .quantity-btn {
+      width: 28px;
+      height: 28px;
+      border: 1px solid #ddd;
+      background: #fff;
+      border-radius: 6px;
+    }
+
+    .cart-footer {
+      border-top: 1px solid #eeeeee;
+      padding: 16px;
+    }
+
+    .bill-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .bill-total {
+      font-size: 19px;
+      font-weight: 800;
+    }
+
+    .checkout-btn {
+      width: 100%;
+      border: none;
+      background: #ff6600;
+      color: #fff;
+      padding: 13px;
+      border-radius: 10px;
+      margin-top: 12px;
+      font-weight: 800;
+    }
+
+
+    /* =====================================================
+       LOGIN MODAL
+    ===================================================== */
 
     .modal {
       position: fixed;
       inset: 0;
-      background: #0009;
-      display: grid;
-      place-items: center;
-      padding: 20px;
-      z-index: 500;
+
+      background: rgba(0, 0, 0, 0.5);
+
+      z-index: 3000;
+
+      display: none;
+
+      align-items: center;
+      justify-content: center;
+
+      padding: 15px;
+    }
+
+    .modal.active {
+      display: flex;
     }
 
     .modal-box {
       width: min(430px, 100%);
-      background: white;
+      background: #fff;
       border-radius: 18px;
-      padding: 20px;
+      padding: 22px;
     }
 
-    .modal input,
-    .modal textarea,
-    .cart textarea {
-      width: 100%;
-      padding: 12px;
-      margin: 7px 0;
-      border: 1px solid #ddd;
-      border-radius: 10px;
-    }
-
-    .modal button {
-      margin: 5px 0;
-    }
-
-    .cart {
-      position: fixed;
-      right: 15px;
-      bottom: 15px;
-      width: min(430px, calc(100% - 30px));
-      max-height: 85vh;
-      overflow-y: auto;
-      background: white;
-      border-radius: 18px;
-      padding: 20px;
-      box-shadow: 0 10px 40px #0004;
-      z-index: 400;
-    }
-
-    .cart-row {
+    .modal-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 10px 0;
-      border-bottom: 1px solid #eee;
+      margin-bottom: 18px;
     }
 
-    .cart-row small {
-      display: block;
-      color: #777;
-      margin-top: 3px;
+    .modal-header h2 {
+      font-size: 20px;
     }
 
-    .flash {
-      background: #111;
-      color: white;
-      padding: 18px;
-      border-radius: 15px;
-      text-align: center;
-    }
-
-    .toast {
-      position: fixed;
-      left: 50%;
-      bottom: 20px;
-      transform: translate(-50%, 30px);
-      opacity: 0;
-      background: #111;
-      color: white;
-      padding: 12px 18px;
+    .input {
+      width: 100%;
+      border: 1px solid #ddd;
       border-radius: 10px;
-      z-index: 1000;
-      transition: .25s;
+      padding: 12px;
+      margin-bottom: 10px;
+      outline: none;
     }
 
-    .toast.show {
-      opacity: 1;
-      transform: translate(-50%, 0);
+    .input:focus {
+      border-color: #ff6600;
     }
 
-    @media(max-width:600px) {
-      .brand {
-        font-size: 16px;
+    .primary-btn {
+      width: 100%;
+      border: none;
+      background: #ff6600;
+      color: #fff;
+      border-radius: 10px;
+      padding: 12px;
+      font-weight: 700;
+      margin-top: 5px;
+    }
+
+    .secondary-btn {
+      width: 100%;
+      border: 1px solid #ddd;
+      background: #fff;
+      color: #333;
+      border-radius: 10px;
+      padding: 12px;
+      font-weight: 700;
+      margin-top: 8px;
+    }
+
+    #recaptcha-container {
+      margin: 10px 0;
+    }
+
+
+    /* =====================================================
+       BOTTOM NAV
+    ===================================================== */
+
+    .bottom-nav {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+
+      z-index: 1500;
+
+      background: #fff;
+      border-top: 1px solid #ddd;
+
+      display: none;
+
+      grid-template-columns: repeat(4, 1fr);
+    }
+
+    .bottom-nav button {
+      border: none;
+      background: transparent;
+      padding: 10px 5px;
+      font-size: 11px;
+    }
+
+    .bottom-nav-icon {
+      display: block;
+      font-size: 20px;
+      margin-bottom: 3px;
+    }
+
+
+    /* =====================================================
+       RESPONSIVE
+    ===================================================== */
+
+    @media (max-width: 1000px) {
+
+      .category-grid {
+        grid-template-columns: repeat(4, 1fr);
       }
 
-      .actions span {
+      .shop-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .product-grid {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+
+
+    @media (max-width: 700px) {
+
+      .top-header {
+        padding: 10px;
+      }
+
+      .header-row {
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .brand {
+        min-width: 0;
+        flex: 1;
+      }
+
+      .brand h1 {
+        font-size: 19px;
+      }
+
+      .location-btn {
         display: none;
       }
 
-      .hero h1 {
-        font-size: 28px;
+      .search-wrap {
+        order: 3;
+        flex-basis: 100%;
+      }
+
+      .header-actions .login-header-btn {
+        display: none;
+      }
+
+      main {
+        padding: 10px 10px 80px;
+      }
+
+      .hero {
+        min-height: 210px;
+        padding: 25px;
+      }
+
+      .hero h2 {
+        font-size: 27px;
+      }
+
+      .category-grid {
+        grid-template-columns: repeat(4, 1fr);
+      }
+
+      .shop-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .product-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .product-image {
+        height: 145px;
+      }
+
+      .offer-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .bottom-nav {
+        display: grid;
       }
     }
+
   </style>
 </head>
 
+
 <body>
 
-<header>
-  <div class="brand">🚩 AIO DIGITAL MALL</div>
 
-  <div class="actions">
-    <span id="loginStatus">Guest</span>
+  <!-- =====================================================
+       HEADER
+  ====================================================== -->
 
-    <button
-      data-login
-      class="primary">
-      LOGIN
-    </button>
+  <header class="top-header">
 
-    <button data-cart>
-      🛒 <span id="cartCount">0</span>
-    </button>
+    <div class="header-row">
 
-    <button
-      id="logoutBtn"
-      class="secondary hidden">
-      LOGOUT
-    </button>
-  </div>
-</header>
+      <div class="brand">
 
-<main>
+        <h1>🚩 AIO DIGITAL MALL</h1>
 
-  <div id="mainBanner" class="hero">
-    <div>
-      <h1>AIO DIGITAL MALL</h1>
-      <p>All Products • Local Shops • COD</p>
+        <small>
+          Shops • Products • Offers • Delivery
+        </small>
+
+      </div>
+
+
+      <button
+        class="location-btn"
+        id="locationButton"
+        type="button"
+      >
+        📍 Select Location
+      </button>
+
+
+      <div class="search-wrap">
+
+        <input
+          id="searchInput"
+          type="search"
+          placeholder="Search products, shops and categories..."
+          autocomplete="off"
+        >
+
+      </div>
+
+
+      <div class="header-actions">
+
+        <button
+          class="header-btn login-header-btn"
+          id="loginButton"
+          type="button"
+        >
+          👤 Login
+        </button>
+
+
+        <button
+          class="header-btn cart-header-btn"
+          id="cartButton"
+          type="button"
+        >
+          🛒 Cart
+          <span id="cartCount">0</span>
+        </button>
+
+      </div>
+
     </div>
+
+  </header>
+
+
+
+  <!-- =====================================================
+       MAIN CONTENT
+  ====================================================== -->
+
+  <main>
+
+
+    <!-- HERO -->
+
+    <section class="hero">
+
+      <div class="hero-content">
+
+        <h2>
+          Everything You Need,
+          All In One Place.
+        </h2>
+
+        <p>
+          Discover nearby shops, products,
+          offers and convenient delivery
+          with AIO DIGITAL MALL.
+        </p>
+
+        <button
+          class="hero-btn"
+          id="exploreButton"
+          type="button"
+        >
+          Explore Now
+        </button>
+
+      </div>
+
+    </section>
+
+
+
+    <!-- ===================================================
+         CATEGORIES
+    ==================================================== -->
+
+    <section class="section">
+
+      <div class="section-header">
+
+        <h2>
+          Categories
+        </h2>
+
+        <button
+          class="see-all"
+          id="allCategoriesButton"
+          type="button"
+        >
+          See All
+        </button>
+
+      </div>
+
+
+      <div
+        class="category-grid"
+        id="categoryGrid"
+      >
+
+        <div class="category-card">
+
+          <div class="category-icon">
+            🍔
+          </div>
+
+          <span>
+            Hotel & Food
+          </span>
+
+        </div>
+
+
+        <div class="category-card">
+
+          <div class="category-icon">
+            🛒
+          </div>
+
+          <span>
+            Grocery
+          </span>
+
+        </div>
+
+
+        <div class="category-card">
+
+          <div class="category-icon">
+            👕
+          </div>
+
+          <span>
+            Fashion
+          </span>
+
+        </div>
+
+
+        <div class="category-card">
+
+          <div class="category-icon">
+            📚
+          </div>
+
+          <span>
+            Education
+          </span>
+
+        </div>
+
+
+        <div class="category-card">
+
+          <div class="category-icon">
+            💎
+          </div>
+
+          <span>
+            Jewellery
+          </span>
+
+        </div>
+
+
+        <div class="category-card">
+
+          <div class="category-icon">
+            🏠
+          </div>
+
+          <span>
+            Property
+          </span>
+
+        </div>
+
+
+        <div class="category-card">
+
+          <div class="category-icon">
+            📱
+          </div>
+
+          <span>
+            Mobile & AC
+          </span>
+
+        </div>
+
+
+        <div class="category-card">
+
+          <div class="category-icon">
+            🛍️
+          </div>
+
+          <span>
+            More
+          </span>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+
+    <!-- ===================================================
+         OFFERS
+    ==================================================== -->
+
+    <section class="section">
+
+      <div class="section-header">
+
+        <h2>
+          🔥 Today's Offers
+        </h2>
+
+      </div>
+
+
+      <div
+        class="offer-grid"
+        id="offerGrid"
+      >
+
+        <div class="loading">
+          Loading offers...
+        </div>
+
+      </div>
+
+    </section>
+
+
+
+    <!-- ===================================================
+         SHOPS
+    ==================================================== -->
+
+    <section class="section">
+
+      <div class="section-header">
+
+        <h2>
+          🏪 Nearby Shops
+        </h2>
+
+        <button
+          class="see-all"
+          id="allShopsButton"
+          type="button"
+        >
+          See All
+        </button>
+
+      </div>
+
+
+      <div
+        class="shop-grid"
+        id="shopGrid"
+      >
+
+        <div class="loading">
+          Loading shops...
+        </div>
+
+      </div>
+
+    </section>
+
+
+
+    <!-- ===================================================
+         PRODUCTS
+    ==================================================== -->
+
+    <section class="section">
+
+      <div class="section-header">
+
+        <h2>
+          🛍️ Popular Products
+        </h2>
+
+        <button
+          class="see-all"
+          id="allProductsButton"
+          type="button"
+        >
+          See All
+        </button>
+
+      </div>
+
+
+      <div
+        class="product-grid"
+        id="productGrid"
+      >
+
+        <div class="loading">
+          Loading products...
+        </div>
+
+      </div>
+
+    </section>
+
+
+
+    <!-- ===================================================
+         AMAZON / AFFILIATE
+    ==================================================== -->
+
+    <section class="section">
+
+      <div class="section-header">
+
+        <h2>
+          🛒 Recommended Deals
+        </h2>
+
+      </div>
+
+
+      <div
+        class="product-grid"
+        id="affiliateGrid"
+      >
+
+        <div class="empty">
+          Deals loading...
+        </div>
+
+      </div>
+
+    </section>
+
+
+  </main>
+
+
+
+  <!-- =====================================================
+       CART OVERLAY
+  ====================================================== -->
+
+  <div
+    class="cart-overlay"
+    id="cartOverlay"
+  >
+
+    <aside class="cart-drawer">
+
+
+      <div class="cart-header">
+
+        <h2>
+          🛒 Your Cart
+        </h2>
+
+        <button
+          class="close-btn"
+          id="closeCartButton"
+          type="button"
+        >
+          ✕
+        </button>
+
+      </div>
+
+
+      <div id="cartItems">
+
+        <div class="empty">
+          Your cart is empty.
+        </div>
+
+      </div>
+
+
+      <div class="cart-footer">
+
+        <div class="bill-row">
+
+          <span>
+            Item Total
+          </span>
+
+          <strong>
+            ₹<span id="cartSubtotal">0</span>
+          </strong>
+
+        </div>
+
+
+        <div class="bill-row">
+
+          <span>
+            Delivery
+          </span>
+
+          <strong>
+            ₹<span id="deliveryFee">0</span>
+          </strong>
+
+        </div>
+
+
+        <div class="bill-row bill-total">
+
+          <span>
+            Total
+          </span>
+
+          <strong>
+            ₹<span id="cartTotal">0</span>
+          </strong>
+
+        </div>
+
+
+        <button
+          class="checkout-btn"
+          id="checkoutButton"
+          type="button"
+        >
+          PROCEED TO CHECKOUT
+        </button>
+
+      </div>
+
+    </aside>
+
   </div>
 
-  <input
-    id="search"
-    class="search"
-    placeholder="Search local products..."
-    autocomplete="off">
 
-  <section>
-    <h2>🔥 LOCAL PRODUCTS</h2>
 
-    <div id="localProducts" class="grid">
-      <p>Firebase se products load ho rahe hain...</p>
+  <!-- =====================================================
+       LOGIN MODAL
+  ====================================================== -->
+
+  <div
+    class="modal"
+    id="loginModal"
+  >
+
+    <div class="modal-box">
+
+
+      <div class="modal-header">
+
+        <h2>
+          👤 Login / Sign Up
+        </h2>
+
+        <button
+          class="close-btn"
+          id="closeLoginButton"
+          type="button"
+        >
+          ✕
+        </button>
+
+      </div>
+
+
+      <p style="margin-bottom:15px;color:#666;">
+        Login to manage your orders,
+        addresses and account.
+      </p>
+
+
+      <input
+        class="input"
+        id="phoneInput"
+        type="tel"
+        placeholder="+91 9876543210"
+        autocomplete="tel"
+      >
+
+
+      <button
+        class="primary-btn"
+        id="sendOtpButton"
+        type="button"
+      >
+        SEND OTP
+      </button>
+
+
+      <div id="recaptcha-container"></div>
+
+
+      <input
+        class="input"
+        id="otpInput"
+        type="text"
+        inputmode="numeric"
+        maxlength="6"
+        placeholder="Enter OTP"
+        style="display:none;"
+      >
+
+
+      <button
+        class="primary-btn"
+        id="verifyOtpButton"
+        type="button"
+        style="display:none;"
+      >
+        VERIFY OTP
+      </button>
+
+
+      <button
+        class="secondary-btn"
+        id="googleLoginButton"
+        type="button"
+      >
+        Continue with Google
+      </button>
+
+
+      <p
+        id="loginStatus"
+        style="
+          margin-top:12px;
+          text-align:center;
+          color:#666;
+          font-size:13px;
+        "
+      ></p>
+
     </div>
-  </section>
-
-  <section>
-    <h2>🛒 AMAZON DEALS</h2>
-
-    <div id="affiliateProducts" class="grid">
-      <p>Amazon deals load ho rahe hain...</p>
-    </div>
-  </section>
-
-  <section class="flash">
-    <h2>⚡ FLASH SALE</h2>
-
-    <p>
-      Ends in:
-      <b id="timer">03:00:00</b>
-    </p>
-  </section>
-
-</main>
-
-<!-- LOGIN -->
-
-<div
-  id="loginBox"
-  class="modal hidden">
-
-  <div class="modal-box">
-
-    <h2>📱 Mobile OTP Login</h2>
-
-    <input
-      id="phone"
-      type="tel"
-      placeholder="+919876543210">
-
-    <button
-      class="primary"
-      onclick="sendOTP()">
-      OTP BHEJO
-    </button>
-
-    <input
-      id="otp"
-      type="text"
-      inputmode="numeric"
-      placeholder="OTP">
-
-    <button
-      class="primary"
-      onclick="verifyOTP()">
-      VERIFY
-    </button>
-
-    <div id="recaptcha"></div>
-
-    <button
-      class="secondary"
-      data-close-login
-      style="width:100%">
-      CLOSE
-    </button>
 
   </div>
-</div>
 
-<!-- CART -->
 
-<div
-  id="cartBox"
-  class="cart hidden">
 
-  <h2>🛒 Your Cart</h2>
+  <!-- =====================================================
+       BOTTOM NAVIGATION
+  ====================================================== -->
 
-  <div id="cartItems">
-    Cart khali hai.
-  </div>
+  <nav class="bottom-nav">
 
-  <h3>
-    Total:
-    ₹<span id="cartTotal">0</span>
-  </h3>
+    <button
+      type="button"
+      id="homeNavButton"
+    >
+      <span class="bottom-nav-icon">
+        🏠
+      </span>
+      Home
+    </button>
 
-  <textarea
-    id="address"
-    rows="4"
-    placeholder="Complete delivery address"></textarea>
 
-  <button
-    class="primary"
-    onclick="placeOrder()"
-    style="width:100%">
-    📦 PLACE COD ORDER
-  </button>
+    <button
+      type="button"
+      id="searchNavButton"
+    >
+      <span class="bottom-nav-icon">
+        🔎
+      </span>
+      Search
+    </button>
 
-  <button
-    class="secondary"
-    onclick="toggleCart(false)"
-    style="width:100%;margin-top:8px">
-    CLOSE
-  </button>
 
-</div>
+    <button
+      type="button"
+      id="ordersNavButton"
+    >
+      <span class="bottom-nav-icon">
+        📦
+      </span>
+      Orders
+    </button>
 
-<div id="toast" class="toast"></div>
 
-<script type="module" src="app.js"></script>
+    <button
+      type="button"
+      id="profileNavButton"
+    >
+      <span class="bottom-nav-icon">
+        👤
+      </span>
+      Account
+    </button>
+
+  </nav>
+
+
+
+  <!-- =====================================================
+       APP
+  ====================================================== -->
+
+  <script
+    type="module"
+    src="./app.js"
+  ></script>
+
 
 </body>
 </html>
