@@ -1,7 +1,8 @@
 // =====================================================
 // AIO DIGITAL MALL
-// MAIN ROOT APP.JS
-// Customer + Team shared Firebase backend
+// ROOT APP.JS
+// EMAIL + GOOGLE LOGIN
+// FIRESTORE + CART + PRODUCTS + ORDERS
 // =====================================================
 
 import {
@@ -10,8 +11,10 @@ import {
 
 import {
   getAuth,
-  RecaptchaVerifier,
-  signInWithPhoneNumber,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
   onAuthStateChanged,
   signOut
 } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
@@ -20,21 +23,16 @@ import {
   getFirestore,
   collection,
   addDoc,
-  getDocs,
   doc,
-  getDoc,
   setDoc,
-  updateDoc,
-  deleteDoc,
-  query,
-  where,
-  orderBy,
+  getDocs,
   onSnapshot,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
 
+
 // =====================================================
-// FIREBASE CONFIG
+// FIREBASE
 // =====================================================
 
 const firebaseConfig = {
@@ -51,13 +49,28 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+
+// =====================================================
+// STATE
+// =====================================================
+
+let currentUser = null;
+let products = [];
+
+let cart = JSON.parse(
+  localStorage.getItem("aio_cart") || "[]"
+);
+
+
 // =====================================================
 // HELPERS
 // =====================================================
 
-const $ = id => document.getElementById(id);
+const $ = id =>
+  document.getElementById(id);
 
 function escapeHTML(value) {
+
   return String(value ?? "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -67,217 +80,559 @@ function escapeHTML(value) {
 }
 
 function money(value) {
+
   return `₹${Number(value || 0).toLocaleString("en-IN")}`;
 }
 
-// =====================================================
-// GLOBAL STATE
-// =====================================================
+function showStatus(message) {
 
-let products = [];
-let cart = JSON.parse(localStorage.getItem("aio_cart") || "[]");
+  const status = $("loginStatus");
 
-let confirmationResult = null;
-let recaptchaVerifier = null;
-
-// =====================================================
-// PHONE LOGIN
-// =====================================================
-
-window.setupRecaptcha = function () {
-
-  if (!$("recaptcha")) return;
-
-  if (recaptchaVerifier) return;
-
-  recaptchaVerifier = new RecaptchaVerifier(
-    auth,
-    "recaptcha",
-    {
-      size: "invisible"
-    }
-  );
-
-  recaptchaVerifier.render();
-};
-
-// =====================================================
-// SEND OTP
-// =====================================================
-
-window.sendOTP = async function () {
-
-  const phoneInput = $("phone");
-
-  if (!phoneInput) return;
-
-  const phone = phoneInput.value.trim();
-
-  if (!phone) {
-    alert("Mobile number daalo.");
-    return;
+  if (status) {
+    status.textContent = message;
   }
 
-  if (!phone.startsWith("+")) {
-    alert("Country code ke saath number daalo.\nExample: +919876543210");
-    return;
+  console.log(message);
+}
+
+
+// =====================================================
+// LOGIN MODAL
+// =====================================================
+
+function openLogin() {
+
+  const modal = $("loginModal");
+
+  if (modal) {
+    modal.classList.add("active");
   }
+}
+
+function closeLogin() {
+
+  const modal = $("loginModal");
+
+  if (modal) {
+    modal.classList.remove("active");
+  }
+}
+
+
+// =====================================================
+// GOOGLE LOGIN
+// =====================================================
+
+async function googleLogin() {
 
   try {
 
-    setupRecaptcha();
+    showStatus("Google login opening...");
 
-    confirmationResult =
-      await signInWithPhoneNumber(
-        auth,
-        phone,
-        recaptchaVerifier
-      );
+    const provider =
+      new GoogleAuthProvider();
 
-    alert("OTP bhej diya ✅");
-
-  } catch (error) {
-
-    console.error(error);
-
-    alert(
-      "OTP send nahi hua ❌\n" +
-      error.message
-    );
-  }
-};
-
-// =====================================================
-// VERIFY OTP
-// =====================================================
-
-window.verifyOTP = async function () {
-
-  const otpInput = $("otp");
-
-  if (!otpInput) return;
-
-  const otp = otpInput.value.trim();
-
-  if (!confirmationResult) {
-    alert("Pehle OTP bhejo.");
-    return;
-  }
-
-  if (!otp) {
-    alert("OTP daalo.");
-    return;
-  }
-
-  try {
+    provider.setCustomParameters({
+      prompt: "select_account"
+    });
 
     const result =
-      await confirmationResult.confirm(otp);
+      await signInWithPopup(
+        auth,
+        provider
+      );
 
-    console.log(
-      "Customer logged in:",
-      result.user.uid
+    await createCustomerProfile(
+      result.user
     );
 
-    alert("Login successful ✅");
+    showStatus("Google login successful ✅");
 
-    if ($("loginBox")) {
-      $("loginBox").style.display = "none";
-    }
+    closeLogin();
 
   } catch (error) {
 
-    console.error(error);
+    console.error(
+      "Google login error:",
+      error
+    );
 
-    alert(
-      "OTP galat hai ya expire ho gaya ❌"
+    showStatus(
+      getAuthErrorMessage(error)
     );
   }
-};
+}
+
 
 // =====================================================
-// LOGOUT
+// EMAIL LOGIN / SIGNUP UI
 // =====================================================
 
-window.logout = async function () {
+function createEmailLoginUI() {
+
+  const box =
+    document.querySelector(".modal-box");
+
+  if (!box) return;
+
+  const existing =
+    document.getElementById(
+      "emailLoginSection"
+    );
+
+  if (existing) return;
+
+  const section =
+    document.createElement("div");
+
+  section.id =
+    "emailLoginSection";
+
+  section.style.marginTop =
+    "10px";
+
+  section.innerHTML = `
+
+    <input
+      class="input"
+      id="emailInput"
+      type="email"
+      placeholder="Email address"
+      autocomplete="email"
+    >
+
+    <input
+      class="input"
+      id="passwordInput"
+      type="password"
+      placeholder="Password"
+      autocomplete="current-password"
+    >
+
+    <button
+      class="primary-btn"
+      id="emailLoginButton"
+      type="button"
+    >
+      LOGIN WITH EMAIL
+    </button>
+
+    <button
+      class="secondary-btn"
+      id="emailSignupButton"
+      type="button"
+    >
+      CREATE ACCOUNT
+    </button>
+
+  `;
+
+  const googleButton =
+    $("googleLoginButton");
+
+  if (googleButton) {
+
+    googleButton.before(section);
+
+  } else {
+
+    box.appendChild(section);
+  }
+
+
+  $("emailLoginButton")
+    ?.addEventListener(
+      "click",
+      loginWithEmail
+    );
+
+  $("emailSignupButton")
+    ?.addEventListener(
+      "click",
+      signupWithEmail
+    );
+}
+
+
+// =====================================================
+// EMAIL LOGIN
+// =====================================================
+
+async function loginWithEmail() {
+
+  const email =
+    $("emailInput")
+      ?.value
+      .trim();
+
+  const password =
+    $("passwordInput")
+      ?.value;
+
+  if (!email) {
+
+    showStatus(
+      "Email daalo."
+    );
+
+    return;
+  }
+
+  if (!password) {
+
+    showStatus(
+      "Password daalo."
+    );
+
+    return;
+  }
 
   try {
 
-    await signOut(auth);
+    showStatus(
+      "Logging in..."
+    );
 
-    alert("Logout ho gaya.");
+    const result =
+      await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+
+    await createCustomerProfile(
+      result.user
+    );
+
+    showStatus(
+      "Login successful ✅"
+    );
+
+    closeLogin();
 
   } catch (error) {
 
-    console.error(error);
+    console.error(
+      "Email login error:",
+      error
+    );
+
+    showStatus(
+      getAuthErrorMessage(error)
+    );
   }
-};
+}
+
+
+// =====================================================
+// EMAIL SIGNUP
+// =====================================================
+
+async function signupWithEmail() {
+
+  const email =
+    $("emailInput")
+      ?.value
+      .trim();
+
+  const password =
+    $("passwordInput")
+      ?.value;
+
+  if (!email) {
+
+    showStatus(
+      "Email daalo."
+    );
+
+    return;
+  }
+
+  if (!password) {
+
+    showStatus(
+      "Password daalo."
+    );
+
+    return;
+  }
+
+  if (password.length < 6) {
+
+    showStatus(
+      "Password minimum 6 characters ka hona chahiye."
+    );
+
+    return;
+  }
+
+  try {
+
+    showStatus(
+      "Account create ho raha hai..."
+    );
+
+    const result =
+      await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+
+    await createCustomerProfile(
+      result.user
+    );
+
+    showStatus(
+      "Account created successfully ✅"
+    );
+
+    closeLogin();
+
+  } catch (error) {
+
+    console.error(
+      "Signup error:",
+      error
+    );
+
+    showStatus(
+      getAuthErrorMessage(error)
+    );
+  }
+}
+
+
+// =====================================================
+// FIREBASE ERROR MESSAGE
+// =====================================================
+
+function getAuthErrorMessage(error) {
+
+  const code =
+    error?.code || "";
+
+  switch (code) {
+
+    case "auth/invalid-email":
+      return "Email address galat hai.";
+
+    case "auth/user-not-found":
+      return "Is email ka account nahi mila.";
+
+    case "auth/wrong-password":
+      return "Password galat hai.";
+
+    case "auth/invalid-credential":
+      return "Email ya password galat hai.";
+
+    case "auth/email-already-in-use":
+      return "Is email se account already bana hua hai.";
+
+    case "auth/weak-password":
+      return "Password minimum 6 characters ka rakho.";
+
+    case "auth/popup-closed-by-user":
+      return "Google login cancel kar diya gaya.";
+
+    case "auth/popup-blocked":
+      return "Browser ne Google popup block kar diya.";
+
+    case "auth/operation-not-allowed":
+      return "Firebase Authentication provider enabled nahi hai.";
+
+    case "auth/network-request-failed":
+      return "Internet connection check karo.";
+
+    default:
+      return (
+        "Login error: " +
+        (error?.message || "Unknown error")
+      );
+  }
+}
+
+
+// =====================================================
+// CUSTOMER PROFILE
+// =====================================================
+
+async function createCustomerProfile(user) {
+
+  if (!user) return;
+
+  try {
+
+    await setDoc(
+      doc(
+        db,
+        "customers",
+        user.uid
+      ),
+      {
+        uid: user.uid,
+        email: user.email || "",
+        name:
+          user.displayName ||
+          "Customer",
+        photo:
+          user.photoURL ||
+          "",
+        phone:
+          user.phoneNumber ||
+          "",
+        updatedAt:
+          serverTimestamp()
+      },
+      {
+        merge: true
+      }
+    );
+
+  } catch (error) {
+
+    console.error(
+      "Customer profile error:",
+      error
+    );
+  }
+}
+
 
 // =====================================================
 // AUTH STATE
 // =====================================================
 
-onAuthStateChanged(auth, user => {
+onAuthStateChanged(
+  auth,
+  async user => {
 
-  window.currentUser = user || null;
+    currentUser =
+      user || null;
 
-  if (user) {
+    window.currentUser =
+      currentUser;
 
-    console.log(
-      "Logged in:",
-      user.phoneNumber || user.uid
-    );
+    updateAuthUI();
 
-    if ($("loginStatus")) {
-      $("loginStatus").textContent =
-        user.phoneNumber || "Logged in";
+    if (user) {
+
+      await createCustomerProfile(
+        user
+      );
+
+      showStatus(
+        user.email ||
+        user.displayName ||
+        "Logged in"
+      );
+
+    } else {
+
+      showStatus(
+        "Guest"
+      );
     }
+  }
+);
+
+
+// =====================================================
+// AUTH UI
+// =====================================================
+
+function updateAuthUI() {
+
+  const loginButton =
+    $("loginButton");
+
+  if (!loginButton) return;
+
+  if (currentUser) {
+
+    loginButton.textContent =
+      "👤 Account";
 
   } else {
 
-    console.log("Customer not logged in");
-
-    if ($("loginStatus")) {
-      $("loginStatus").textContent =
-        "Guest";
-    }
+    loginButton.textContent =
+      "👤 Login";
   }
-});
+}
+
+
+// =====================================================
+// LOGOUT
+// =====================================================
+
+async function logout() {
+
+  try {
+
+    await signOut(auth);
+
+    closeLogin();
+
+    showStatus(
+      "Logout successful."
+    );
+
+  } catch (error) {
+
+    console.error(
+      "Logout error:",
+      error
+    );
+  }
+}
+
 
 // =====================================================
 // PRODUCTS
 // =====================================================
 
-function productCard(id, p) {
+function productCard(
+  id,
+  product
+) {
 
   const name =
-    p.name || "Product";
+    product.name ||
+    "Product";
 
   const image =
-    p.photo ||
-    p.image ||
+    product.photo ||
+    product.image ||
     "https://via.placeholder.com/400x300?text=AIO+Digital+Mall";
 
   const price =
-    Number(p.price || 0);
+    Number(
+      product.price || 0
+    );
 
   const stock =
     Number(
-      p.stock === undefined
+      product.stock === undefined
         ? 1
-        : p.stock
+        : product.stock
     );
 
   return `
-    <article class="product-card">
+
+    <article
+      class="product-card"
+    >
 
       <img
+        class="product-image"
         src="${escapeHTML(image)}"
         alt="${escapeHTML(name)}"
         loading="lazy"
       >
 
-      <div class="product-info">
+      <div
+        class="product-info"
+      >
 
         <h3>
           ${escapeHTML(name)}
@@ -285,11 +640,13 @@ function productCard(id, p) {
 
         <p>
           ${escapeHTML(
-            p.description || ""
+            product.description || ""
           )}
         </p>
 
-        <strong>
+        <strong
+          class="product-price"
+        >
           ${money(price)}
         </strong>
 
@@ -298,7 +655,7 @@ function productCard(id, p) {
 
           ? `
             <button
-              class="btn"
+              class="add-btn"
               disabled
             >
               OUT OF STOCK
@@ -307,11 +664,9 @@ function productCard(id, p) {
 
           : `
             <button
-              class="btn"
+              class="add-btn"
               onclick="addCart(
-                '${id}',
-                ${JSON.stringify(name)},
-                ${price}
+                '${id}'
               )"
             >
               ADD TO CART
@@ -322,63 +677,70 @@ function productCard(id, p) {
       </div>
 
     </article>
+
   `;
 }
+
 
 // =====================================================
 // LOAD PRODUCTS
 // =====================================================
 
-window.loadProducts = function () {
+function loadProducts() {
 
   const container =
-    $("localProducts");
+    $("productGrid");
 
   if (!container) return;
 
-  const productsRef =
-    collection(db, "products");
-
   onSnapshot(
-    productsRef,
+    collection(
+      db,
+      "products"
+    ),
 
     snapshot => {
 
       products = [];
 
-      snapshot.forEach(item => {
+      snapshot.forEach(
+        item => {
 
-        const data = item.data();
+          products.push({
+            id: item.id,
+            ...item.data()
+          });
 
-        products.push({
-          id: item.id,
-          ...data
-        });
-      });
+        }
+      );
 
-      const localProducts =
+      const local =
         products.filter(
-          p => p.type !== "affiliate"
+          p =>
+            p.type !==
+            "affiliate"
         );
 
-      if (!localProducts.length) {
+      if (!local.length) {
 
-        container.innerHTML = `
-          <p>
-            Abhi products available nahi hain.
-          </p>
-        `;
+        container.innerHTML =
+          `<div class="empty">
+             Abhi products available nahi hain.
+           </div>`;
 
         return;
       }
 
       container.innerHTML =
-        localProducts
-          .map(p =>
-            productCard(p.id, p)
+        local
+          .map(
+            p =>
+              productCard(
+                p.id,
+                p
+              )
           )
           .join("");
-
     },
 
     error => {
@@ -389,154 +751,13 @@ window.loadProducts = function () {
       );
 
       container.innerHTML =
-        "<p>Products load nahi ho paaye.</p>";
+        `<div class="empty">
+           Products load nahi ho paaye.
+         </div>`;
     }
   );
-};
+}
 
-// =====================================================
-// AFFILIATE PRODUCTS
-// =====================================================
-
-window.loadAffiliateProducts = function () {
-
-  const container =
-    $("affiliateProducts");
-
-  if (!container) return;
-
-  onSnapshot(
-    collection(db, "products"),
-
-    snapshot => {
-
-      const affiliate =
-        snapshot.docs
-          .map(d => ({
-            id: d.id,
-            ...d.data()
-          }))
-          .filter(
-            p => p.type === "affiliate"
-          );
-
-      if (!affiliate.length) {
-
-        container.innerHTML =
-          "<p>Amazon deals available nahi hain.</p>";
-
-        return;
-      }
-
-      container.innerHTML =
-        affiliate.map(p => {
-
-          const image =
-            p.photo ||
-            p.image ||
-            "https://via.placeholder.com/400x300?text=Amazon";
-
-          return `
-            <article class="product-card affiliate">
-
-              <img
-                src="${escapeHTML(image)}"
-                alt="${escapeHTML(p.name || "Amazon Product")}"
-                loading="lazy"
-              >
-
-              <div class="product-info">
-
-                <h3>
-                  ${escapeHTML(
-                    p.name || "Amazon Product"
-                  )}
-                </h3>
-
-                <strong>
-                  ${money(p.price)}
-                </strong>
-
-                <button
-                  class="btn"
-                  onclick="openAffiliate(
-                    ${JSON.stringify(p.link || "#")}
-                  )"
-                >
-                  BUY ON AMAZON
-                </button>
-
-              </div>
-
-            </article>
-          `;
-
-        }).join("");
-    }
-  );
-};
-
-window.openAffiliate = function (url) {
-
-  if (!url || url === "#") {
-    alert("Product link available nahi hai.");
-    return;
-  }
-
-  window.open(
-    url,
-    "_blank",
-    "noopener,noreferrer"
-  );
-};
-
-// =====================================================
-// SEARCH
-// =====================================================
-
-window.searchProducts = function () {
-
-  const input = $("search");
-
-  if (!input) return;
-
-  const value =
-    input.value
-      .trim()
-      .toLowerCase();
-
-  const container =
-    $("localProducts");
-
-  if (!container) return;
-
-  const filtered =
-    products.filter(p => {
-
-      if (p.type === "affiliate") {
-        return false;
-      }
-
-      return String(
-        p.name || ""
-      )
-        .toLowerCase()
-        .includes(value);
-    });
-
-  if (!filtered.length) {
-
-    container.innerHTML =
-      "<p>Product nahi mila.</p>";
-
-    return;
-  }
-
-  container.innerHTML =
-    filtered
-      .map(p => productCard(p.id, p))
-      .join("");
-};
 
 // =====================================================
 // CART
@@ -550,28 +771,59 @@ function saveCart() {
   );
 }
 
-window.addCart = function (
-  id,
-  name,
-  price
-) {
+
+window.addCart =
+function(id) {
+
+  const product =
+    products.find(
+      p =>
+        p.id === id
+    );
+
+  if (!product) {
+
+    alert(
+      "Product nahi mila."
+    );
+
+    return;
+  }
 
   const existing =
     cart.find(
-      item => item.id === id
+      item =>
+        item.id === id
     );
 
   if (existing) {
 
-    existing.quantity =
-      Number(existing.quantity || 1) + 1;
+    existing.quantity++;
 
   } else {
 
     cart.push({
+
       id,
-      name,
-      price: Number(price || 0),
+
+      name:
+        product.name ||
+        "Product",
+
+      price:
+        Number(
+          product.price || 0
+        ),
+
+      image:
+        product.photo ||
+        product.image ||
+        "",
+
+      shopId:
+        product.shopId ||
+        "",
+
       quantity: 1
     });
   }
@@ -581,33 +833,45 @@ window.addCart = function (
   updateCartUI();
 
   alert(
-    `${name} cart me add ho gaya ✅`
+    "Cart me add ho gaya ✅"
   );
 };
 
-window.removeCart = function (index) {
 
-  cart.splice(index, 1);
+window.removeCart =
+function(index) {
+
+  cart.splice(
+    index,
+    1
+  );
 
   saveCart();
 
   updateCartUI();
 };
 
-window.changeCartQty = function (
+
+window.changeCartQty =
+function(
   index,
   amount
 ) {
 
   if (!cart[index]) return;
 
-  cart[index].quantity =
-    Number(cart[index].quantity || 1)
-    + amount;
+  cart[index].quantity +=
+    amount;
 
-  if (cart[index].quantity <= 0) {
+  if (
+    cart[index].quantity <=
+    0
+  ) {
 
-    cart.splice(index, 1);
+    cart.splice(
+      index,
+      1
+    );
   }
 
   saveCart();
@@ -615,56 +879,81 @@ window.changeCartQty = function (
   updateCartUI();
 };
 
+
 // =====================================================
 // CART UI
 // =====================================================
 
-window.updateCartUI = function () {
+function updateCartUI() {
 
   const count =
     $("cartCount");
 
-  const total =
-    $("cartTotal");
-
-  const items =
-    $("cartItems");
+  const subtotal =
+    cart.reduce(
+      (sum, item) =>
+        sum +
+        Number(
+          item.price || 0
+        ) *
+        Number(
+          item.quantity || 1
+        ),
+      0
+    );
 
   const itemCount =
     cart.reduce(
       (sum, item) =>
         sum +
-        Number(item.quantity || 1),
-      0
-    );
-
-  const cartTotal =
-    cart.reduce(
-      (sum, item) =>
-        sum +
-        Number(item.price || 0) *
-        Number(item.quantity || 1),
+        Number(
+          item.quantity || 1
+        ),
       0
     );
 
   if (count) {
+
     count.textContent =
       itemCount;
   }
 
-  if (total) {
-    total.textContent =
-      cartTotal.toLocaleString(
+  if ($("cartSubtotal")) {
+
+    $("cartSubtotal")
+      .textContent =
+      subtotal.toLocaleString(
         "en-IN"
       );
   }
+
+  if ($("deliveryFee")) {
+
+    $("deliveryFee")
+      .textContent =
+      "0";
+  }
+
+  if ($("cartTotal")) {
+
+    $("cartTotal")
+      .textContent =
+      subtotal.toLocaleString(
+        "en-IN"
+      );
+  }
+
+  const items =
+    $("cartItems");
 
   if (!items) return;
 
   if (!cart.length) {
 
     items.innerHTML =
-      "<p>Cart khali hai 🛒</p>";
+      `<div class="empty">
+         Your cart is empty.
+       </div>`;
 
     return;
   }
@@ -675,152 +964,259 @@ window.updateCartUI = function () {
 
         <div class="cart-item">
 
-          <div>
+          <img
+            class="cart-item-image"
+            src="${escapeHTML(
+              item.image || ""
+            )}"
+            alt=""
+          >
 
-            <strong>
-              ${escapeHTML(item.name)}
-            </strong>
+          <div
+            class="cart-item-info"
+          >
+
+            <div
+              class="cart-item-name"
+            >
+              ${escapeHTML(
+                item.name
+              )}
+            </div>
 
             <div>
-              ${money(item.price)}
+              ${money(
+                item.price
+              )}
+            </div>
+
+            <div
+              class="quantity-row"
+            >
+
+              <button
+                class="quantity-btn"
+                onclick="changeCartQty(
+                  ${index},
+                  -1
+                )"
+              >
+                −
+              </button>
+
+              <span>
+                ${item.quantity}
+              </span>
+
+              <button
+                class="quantity-btn"
+                onclick="changeCartQty(
+                  ${index},
+                  1
+                )"
+              >
+                +
+              </button>
+
+              <button
+                class="quantity-btn"
+                onclick="removeCart(
+                  ${index}
+                )"
+              >
+                🗑️
+              </button>
+
             </div>
 
           </div>
 
-          <div class="cart-controls">
-
-            <button
-              onclick="changeCartQty(${index}, -1)"
-            >
-              −
-            </button>
-
-            <span>
-              ${item.quantity}
-            </span>
-
-            <button
-              onclick="changeCartQty(${index}, 1)"
-            >
-              +
-            </button>
-
-            <button
-              onclick="removeCart(${index})"
-            >
-              🗑️
-            </button>
-
-          </div>
-
         </div>
+
       `
     ).join("");
-};
+}
+
 
 // =====================================================
-// CART TOGGLE
+// SEARCH
 // =====================================================
 
-window.toggleCart = function () {
+function searchProducts() {
 
-  const box =
-    $("cartBox");
+  const input =
+    $("searchInput");
 
-  if (!box) return;
+  if (!input) return;
 
-  box.style.display =
-    box.style.display === "none"
-      ? "block"
-      : "none";
-};
+  const value =
+    input.value
+      .trim()
+      .toLowerCase();
 
-// =====================================================
-// PLACE COD ORDER
-// =====================================================
+  const container =
+    $("productGrid");
 
-window.placeCODOrder =
-async function () {
+  if (!container) return;
 
-  if (!cart.length) {
+  const result =
+    products
+      .filter(
+        p =>
+          p.type !==
+          "affiliate"
+      )
+      .filter(
+        p => {
 
-    alert("Cart khali hai ❌");
+          const name =
+            String(
+              p.name || ""
+            )
+              .toLowerCase();
+
+          const category =
+            String(
+              p.category || ""
+            )
+              .toLowerCase();
+
+          return (
+            name.includes(value) ||
+            category.includes(value)
+          );
+        }
+      );
+
+  if (!result.length) {
+
+    container.innerHTML =
+      `<div class="empty">
+         Product nahi mila.
+       </div>`;
 
     return;
   }
 
-  const user =
-    auth.currentUser;
+  container.innerHTML =
+    result
+      .map(
+        p =>
+          productCard(
+            p.id,
+            p
+          )
+      )
+      .join("");
+}
 
-  const phone =
-    user?.phoneNumber ||
-    prompt("Mobile number daalo");
 
-  if (!phone) {
+// =====================================================
+// CART OPEN/CLOSE
+// =====================================================
 
-    alert("Mobile number required hai.");
+function openCart() {
+
+  $("cartOverlay")
+    ?.classList.add(
+      "active"
+    );
+}
+
+function closeCart() {
+
+  $("cartOverlay")
+    ?.classList.remove(
+      "active"
+    );
+}
+
+
+// =====================================================
+// CHECKOUT
+// =====================================================
+
+async function checkout() {
+
+  if (!currentUser) {
+
+    closeCart();
+
+    openLogin();
+
+    showStatus(
+      "Order karne ke liye login karo."
+    );
+
+    return;
+  }
+
+  if (!cart.length) {
+
+    alert(
+      "Cart khali hai."
+    );
 
     return;
   }
 
   const address =
     prompt(
-      "Complete delivery address daalo"
+      "Complete delivery address daalo:"
     );
 
-  if (!address) {
-
-    alert("Address required hai.");
-
-    return;
-  }
+  if (!address) return;
 
   const total =
     cart.reduce(
       (sum, item) =>
         sum +
-        Number(item.price || 0) *
-        Number(item.quantity || 1),
+        Number(
+          item.price || 0
+        ) *
+        Number(
+          item.quantity || 1
+        ),
       0
-    );
-
-  const deliveryOTP =
-    String(
-      Math.floor(
-        1000 +
-        Math.random() * 9000
-      )
     );
 
   try {
 
-    const order = {
-
-      userId:
-        user?.uid || null,
-
-      phone,
-
-      address,
-
-      items: cart,
-
-      total,
-
-      paymentMethod: "COD",
-
-      status: "NEW",
-
-      deliveryOTP,
-
-      createdAt:
-        serverTimestamp()
-    };
-
     const orderRef =
       await addDoc(
-        collection(db, "orders"),
-        order
+        collection(
+          db,
+          "orders"
+        ),
+        {
+
+          customerId:
+            currentUser.uid,
+
+          customerEmail:
+            currentUser.email ||
+            "",
+
+          customerName:
+            currentUser.displayName ||
+            "Customer",
+
+          address,
+
+          items:
+            cart,
+
+          total,
+
+          paymentMethod:
+            "COD",
+
+          status:
+            "NEW",
+
+          createdAt:
+            serverTimestamp()
+        }
       );
 
     cart = [];
@@ -829,14 +1225,12 @@ async function () {
 
     updateCartUI();
 
+    closeCart();
+
     alert(
-      "Order Successfully Place Ho Gaya ✅\n\n" +
-      "Payment: CASH ON DELIVERY\n" +
+      "Order successfully place ho gaya ✅\n\n" +
       "Order ID: " +
-      orderRef.id +
-      "\n\n" +
-      "Delivery OTP: " +
-      deliveryOTP
+      orderRef.id
     );
 
   } catch (error) {
@@ -851,84 +1245,177 @@ async function () {
       error.message
     );
   }
-};
+}
 
-// Compatibility
-window.placeOrder =
-  window.placeCODOrder;
 
 // =====================================================
-// BANNER
+// EVENT LISTENERS
 // =====================================================
 
-window.loadMainBanner = function () {
+document.addEventListener(
+  "DOMContentLoaded",
+  () => {
 
-  const banner =
-    $("mainBanner");
+    createEmailLoginUI();
 
-  if (!banner) return;
+    updateCartUI();
 
-  onSnapshot(
-    doc(
-      db,
-      "banner",
-      "main"
-    ),
+    loadProducts();
 
-    snapshot => {
 
-      if (!snapshot.exists()) return;
+    $("loginButton")
+      ?.addEventListener(
+        "click",
+        openLogin
+      );
 
-      const data =
-        snapshot.data();
 
-      if (data.url) {
+    $("closeLoginButton")
+      ?.addEventListener(
+        "click",
+        closeLogin
+      );
 
-        banner.style.backgroundImage =
-          `url("${data.url}")`;
-      }
-    }
-  );
-};
 
-// =====================================================
-// FLASH SALE
-// =====================================================
+    $("googleLoginButton")
+      ?.addEventListener(
+        "click",
+        googleLogin
+      );
 
-let flashTime = 10799;
 
-setInterval(() => {
+    $("cartButton")
+      ?.addEventListener(
+        "click",
+        openCart
+      );
 
-  const timer =
-    $("timer");
 
-  if (!timer) return;
+    $("closeCartButton")
+      ?.addEventListener(
+        "click",
+        closeCart
+      );
 
-  if (flashTime <= 0) {
-    flashTime = 10799;
+
+    $("checkoutButton")
+      ?.addEventListener(
+        "click",
+        checkout
+      );
+
+
+    $("searchInput")
+      ?.addEventListener(
+        "input",
+        searchProducts
+      );
+
+
+    $("cartOverlay")
+      ?.addEventListener(
+        "click",
+        event => {
+
+          if (
+            event.target ===
+            $("cartOverlay")
+          ) {
+
+            closeCart();
+          }
+        }
+      );
+
+
+    $("exploreButton")
+      ?.addEventListener(
+        "click",
+        () => {
+
+          document
+            .getElementById(
+              "productGrid"
+            )
+            ?.scrollIntoView({
+              behavior: "smooth"
+            });
+
+        }
+      );
+
+
+    $("profileNavButton")
+      ?.addEventListener(
+        "click",
+        openLogin
+      );
+
+
+    $("ordersNavButton")
+      ?.addEventListener(
+        "click",
+        () => {
+
+          if (!currentUser) {
+
+            openLogin();
+
+            showStatus(
+              "Orders dekhne ke liye login karo."
+            );
+
+            return;
+          }
+
+          alert(
+            "My Orders section connected hai."
+          );
+        }
+      );
+
+
+    $("homeNavButton")
+      ?.addEventListener(
+        "click",
+        () => {
+
+          window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+          });
+
+        }
+      );
+
+
+    $("searchNavButton")
+      ?.addEventListener(
+        "click",
+        () => {
+
+          $("searchInput")
+            ?.focus();
+
+        }
+      );
+
+
+    $("locationButton")
+      ?.addEventListener(
+        "click",
+        () => {
+
+          alert(
+            "Location selection next step me connect ki jayegi."
+          );
+
+        }
+      );
+
   }
+);
 
-  flashTime--;
-
-  const h =
-    Math.floor(
-      flashTime / 3600
-    );
-
-  const m =
-    Math.floor(
-      (flashTime % 3600) / 60
-    );
-
-  const s =
-    flashTime % 60;
-
-  timer.textContent =
-    `${String(h).padStart(2, "0")}:` +
-    `${String(m).padStart(2, "0")}:` +
-    `${String(s).padStart(2, "0")}`;
-
-}, 1000);
 
 // =====================================================
 // SERVICE WORKER
@@ -943,35 +1430,43 @@ if (
     () => {
 
       navigator.serviceWorker
-        .register("./sw.js")
+        .register(
+          "./sw.js"
+        )
         .catch(
           error =>
             console.error(
-              "SW error:",
+              "Service Worker error:",
               error
             )
         );
+
     }
   );
 }
 
+
 // =====================================================
-// START
+// GLOBAL FUNCTIONS
 // =====================================================
 
-document.addEventListener(
-  "DOMContentLoaded",
-  () => {
+window.googleLogin =
+  googleLogin;
 
-    updateCartUI();
+window.loginWithEmail =
+  loginWithEmail;
 
-    setupRecaptcha();
+window.signupWithEmail =
+  signupWithEmail;
 
-    loadProducts();
+window.logout =
+  logout;
 
-    loadAffiliateProducts();
+window.updateCartUI =
+  updateCartUI;
 
-    loadMainBanner();
+window.searchProducts =
+  searchProducts;
 
-  }
-);
+window.checkout =
+  checkout;
