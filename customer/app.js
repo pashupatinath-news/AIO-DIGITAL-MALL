@@ -1,3 +1,10 @@
+// ============================================================
+// AIO DIGITAL MALL
+// CUSTOMER APP.JS
+// Swiggy-style Customer Website + App
+// Firebase Auth + Firestore + Cart + Orders + Search
+// ============================================================
+
 import {
   initializeApp
 } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
@@ -13,211 +20,155 @@ import {
 import {
   getFirestore,
   collection,
-  query,
-  where,
-  onSnapshot,
+  doc,
+  getDoc,
   getDocs,
   addDoc,
-  doc,
+  updateDoc,
+  query,
+  where,
+  orderBy,
+  onSnapshot,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
 
-import {
-  firebaseConfig
-} from "./firebaseConfig.js";
+
+// ============================================================
+// FIREBASE CONFIG
+// ============================================================
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAyH9RRJTEETFh4zHWwCMO4d6qMielJQFA",
+  authDomain: "aio-digital-mall.firebaseapp.com",
+  projectId: "aio-digital-mall",
+  storageBucket: "aio-digital-mall.firebasestorage.app",
+  messagingSenderId: "501384049673",
+  appId: "1:501384049673:web:968bd8311cc700f82874d8",
+  measurementId: "G-TNDT9FYNRP"
+};
 
 const app = initializeApp(firebaseConfig);
+
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-const $ = id => document.getElementById(id);
 
-let cart =
-  JSON.parse(
-    localStorage.getItem("aio_cart") || "[]"
-  );
+// ============================================================
+// GLOBAL STATE
+// ============================================================
 
+let currentUser = null;
 let confirmationResult = null;
 let recaptchaVerifier = null;
 
-function esc(value) {
+let cart = JSON.parse(
+  localStorage.getItem("aio_customer_cart") || "[]"
+);
+
+let allProducts = [];
+let allShops = [];
+
+
+// ============================================================
+// HELPER
+// ============================================================
+
+const $ = id => document.getElementById(id);
+
+function escapeHTML(value) {
   return String(value ?? "")
-    .replace(/&/g,"&amp;")
-    .replace(/</g,"&lt;")
-    .replace(/>/g,"&gt;")
-    .replace(/"/g,"&quot;")
-    .replace(/'/g,"&#039;");
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
-function money(value) {
-  return "₹" +
-    Number(value || 0)
-      .toLocaleString("en-IN");
-}
 
-function toast(message) {
+// ============================================================
+// TOAST
+// ============================================================
 
-  const el = $("toast");
+function showToast(message) {
 
-  if (!el) {
-    alert(message);
-    return;
+  let toast = $("toast");
+
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.id = "toast";
+
+    toast.style.position = "fixed";
+    toast.style.bottom = "25px";
+    toast.style.left = "50%";
+    toast.style.transform = "translateX(-50%)";
+    toast.style.zIndex = "99999";
+    toast.style.background = "#222";
+    toast.style.color = "#fff";
+    toast.style.padding = "12px 20px";
+    toast.style.borderRadius = "10px";
+    toast.style.fontSize = "14px";
+
+    document.body.appendChild(toast);
   }
 
-  el.textContent = message;
-  el.classList.add("show");
+  toast.innerText = message;
+  toast.style.display = "block";
 
-  setTimeout(() => {
-    el.classList.remove("show");
-  }, 2200);
+  clearTimeout(window.toastTimer);
+
+  window.toastTimer = setTimeout(() => {
+    toast.style.display = "none";
+  }, 2500);
 }
 
-function saveCart() {
 
-  localStorage.setItem(
-    "aio_cart",
-    JSON.stringify(cart)
-  );
+// ============================================================
+// AUTH
+// ============================================================
 
-  updateCartUI();
-}
+function setupRecaptcha() {
 
-function updateCartUI() {
-
-  if ($("cartCount")) {
-    $("cartCount").textContent =
-      cart.length;
-  }
-
-  if ($("cartTotal")) {
-
-    $("cartTotal").textContent =
-      cart.reduce(
-        (s,x) =>
-          s + Number(x.price || 0),
-        0
-      ).toLocaleString("en-IN");
-
-  }
-
-  if ($("cartItems")) {
-
-    $("cartItems").innerHTML =
-      cart.length
-
-      ? cart.map((item,index) => `
-          <div class="cart-row">
-
-            <span>
-              ${esc(item.name)}
-
-              <small>
-                ${money(item.price)}
-              </small>
-            </span>
-
-            <button
-              class="danger"
-              data-remove="${index}">
-              ×
-            </button>
-
-          </div>
-        `).join("")
-
-      : "<p>Cart khali hai.</p>";
-  }
-}
-
-function addCart(id,name,price) {
-
-  cart.push({
-    id,
-    name,
-    price:Number(price || 0)
-  });
-
-  saveCart();
-
-  toast(
-    name +
-    " cart me add ho gaya ✅"
-  );
-
-}
-
-window.addCart = addCart;
-
-function removeCart(index) {
-
-  cart.splice(index,1);
-
-  saveCart();
-}
-
-window.removeCart = removeCart;
-
-function toggleCart(force) {
-
-  const box = $("cartBox");
-
-  if (!box) return;
-
-  if (force === undefined) {
-
-    box.classList.toggle("hidden");
-
-  } else {
-
-    box.classList.toggle(
-      "hidden",
-      !force
-    );
-
-  }
-
-}
-
-window.toggleCart = toggleCart;
-
-async function setupRecaptcha() {
-
-  if (!$("recaptcha")) return;
+  if (!$("recaptcha-container")) return;
 
   if (recaptchaVerifier) return;
 
-  recaptchaVerifier =
-    new RecaptchaVerifier(
-      auth,
-      "recaptcha",
-      {
-        size:"invisible"
-      }
-    );
-
-  await recaptchaVerifier.render();
+  recaptchaVerifier = new RecaptchaVerifier(
+    auth,
+    "recaptcha-container",
+    {
+      size: "invisible"
+    }
+  );
 }
 
-async function sendOTP() {
 
-  const phone =
-    $("phone")?.value.trim();
+// ============================================================
+// SEND OTP
+// ============================================================
+
+window.sendOTP = async function () {
+
+  const phoneInput = $("phone");
+
+  if (!phoneInput) return;
+
+  let phone = phoneInput.value.trim();
 
   if (!phone) {
-    return toast(
-      "Mobile number daalo."
-    );
+    showToast("Mobile number daalo");
+    return;
   }
 
   if (!phone.startsWith("+")) {
-    return toast(
-      "Country code ke saath number daalo."
+    showToast(
+      "Country code ke saath number daalo. Example: +919876543210"
     );
+    return;
   }
 
   try {
 
-    await setupRecaptcha();
+    setupRecaptcha();
 
     confirmationResult =
       await signInWithPhoneNumber(
@@ -226,571 +177,1203 @@ async function sendOTP() {
         recaptchaVerifier
       );
 
-    toast("OTP bhej diya ✅");
+    showToast("OTP bhej diya ✅");
 
-  } catch(error) {
+    if ($("otpBox")) {
+      $("otpBox").style.display = "block";
+    }
+
+  } catch (error) {
 
     console.error(error);
 
-    toast(
-      error.message
+    showToast(
+      "OTP error: " + error.message
     );
-
   }
-}
+};
 
-window.sendOTP = sendOTP;
 
-async function verifyOTP() {
+// ============================================================
+// VERIFY OTP
+// ============================================================
+
+window.verifyOTP = async function () {
+
+  const otpInput = $("otp");
+
+  if (!otpInput) return;
+
+  const otp = otpInput.value.trim();
 
   if (!confirmationResult) {
-    return toast(
-      "Pehle OTP bhejo."
-    );
+    showToast("Pehle OTP bhejo");
+    return;
   }
 
-  const otp =
-    $("otp")?.value.trim();
-
   if (!otp) {
-    return toast(
-      "OTP daalo."
-    );
+    showToast("OTP daalo");
+    return;
   }
 
   try {
 
-    await confirmationResult.confirm(
-      otp
-    );
+    const result =
+      await confirmationResult.confirm(otp);
 
-    $("loginBox")
-      ?.classList.add("hidden");
+    currentUser = result.user;
 
-    toast(
-      "Login ho gaya ✅"
-    );
+    showToast("Login successful ✅");
 
-  } catch(error) {
+    if ($("loginModal")) {
+      $("loginModal").style.display = "none";
+    }
 
-    toast(
-      "Galat OTP ❌"
-    );
+    await loadUserProfile();
 
+  } catch (error) {
+
+    console.error(error);
+
+    showToast("Galat OTP ❌");
+  }
+};
+
+
+// ============================================================
+// AUTH STATE
+// ============================================================
+
+onAuthStateChanged(auth, async user => {
+
+  currentUser = user;
+
+  updateAuthUI();
+
+  if (user) {
+    await loadUserProfile();
+    await loadMyOrders();
+  }
+
+});
+
+
+// ============================================================
+// AUTH UI
+// ============================================================
+
+function updateAuthUI() {
+
+  const loginButton = $("loginButton");
+  const accountButton = $("accountButton");
+
+  if (currentUser) {
+
+    if (loginButton) {
+      loginButton.innerText = "ACCOUNT";
+    }
+
+    if (accountButton) {
+      accountButton.style.display = "block";
+    }
+
+  } else {
+
+    if (loginButton) {
+      loginButton.innerText = "LOGIN";
+    }
+
+    if (accountButton) {
+      accountButton.style.display = "none";
+    }
   }
 }
 
-window.verifyOTP = verifyOTP;
 
-function renderProducts(
-  docs,
-  containerId,
-  affiliate = false
-) {
+// ============================================================
+// LOGOUT
+// ============================================================
+
+window.logoutCustomer = async function () {
+
+  try {
+
+    await signOut(auth);
+
+    currentUser = null;
+
+    showToast("Logout ho gaya");
+
+  } catch (error) {
+
+    console.error(error);
+
+    showToast("Logout failed");
+  }
+};
+
+
+// ============================================================
+// USER PROFILE
+// ============================================================
+
+async function loadUserProfile() {
+
+  if (!currentUser) return;
+
+  try {
+
+    const userRef =
+      doc(db, "customers", currentUser.uid);
+
+    const snap =
+      await getDoc(userRef);
+
+    if (snap.exists()) {
+
+      const data = snap.data();
+
+      if ($("customerName")) {
+        $("customerName").innerText =
+          data.name || "Customer";
+      }
+
+    }
+
+  } catch (error) {
+
+    console.error(
+      "Profile error:",
+      error
+    );
+  }
+}
+
+
+// ============================================================
+// LOAD SHOPS
+// ============================================================
+
+async function loadShops() {
+
+  try {
+
+    const snapshot =
+      await getDocs(
+        collection(db, "shops")
+      );
+
+    allShops = [];
+
+    snapshot.forEach(item => {
+
+      allShops.push({
+        id: item.id,
+        ...item.data()
+      });
+
+    });
+
+    renderShops();
+
+  } catch (error) {
+
+    console.error(
+      "Shop loading error:",
+      error
+    );
+  }
+}
+
+
+// ============================================================
+// RENDER SHOPS
+// ============================================================
+
+function renderShops() {
 
   const container =
-    $(containerId);
+    $("shopList");
 
   if (!container) return;
 
-  if (!docs.length) {
+  if (!allShops.length) {
 
     container.innerHTML =
-      "<p>Products available nahi hain.</p>";
+      "<p>No shops available.</p>";
 
     return;
   }
 
   container.innerHTML =
-    docs.map(d => {
-
-      const p = d.data();
+    allShops.map(shop => {
 
       const name =
-        p.name || "Product";
-
-      const price =
-        Number(p.price || 0);
+        escapeHTML(
+          shop.name || "Shop"
+        );
 
       const image =
-        p.photo ||
-        p.image ||
-        "https://via.placeholder.com/600x400?text=Product";
+        shop.image ||
+        shop.photo ||
+        "https://via.placeholder.com/300";
 
-      if (affiliate) {
-
-        return `
-          <article class="card">
-
-            <img
-              src="${esc(image)}"
-              alt="${esc(name)}">
-
-            <div class="card-body">
-
-              <h3>
-                ${esc(name)}
-              </h3>
-
-              <b>
-                ${money(price)}
-              </b>
-
-              <button
-                class="primary"
-                data-buy="${esc(p.link || "#")}">
-                BUY ON AMAZON
-              </button>
-
-            </div>
-
-          </article>
-        `;
-
-      }
-
-      const stock =
-        Number(p.stock ?? 1);
+      const category =
+        escapeHTML(
+          shop.category || "Shop"
+        );
 
       return `
-        <article class="card">
+        <div class="shop-card"
+             onclick="openShop('${shop.id}')">
 
           <img
-            src="${esc(image)}"
-            alt="${esc(name)}">
+            src="${image}"
+            alt="${name}"
+          >
 
-          <div class="card-body">
+          <h3>${name}</h3>
 
-            <h3>
-              ${esc(name)}
-            </h3>
+          <p>${category}</p>
 
-            <b>
-              ${money(price)}
-            </b>
+          <small>
+            ${shop.rating || "4.5"} ⭐
+          </small>
 
-            ${
-              stock <= 0
-
-              ? `
-                <button
-                  disabled
-                  style="width:100%;margin-top:12px">
-                  OUT OF STOCK
-                </button>
-              `
-
-              : `
-                <button
-                  class="primary"
-                  data-add="${esc(d.id)}"
-                  data-name="${esc(name)}"
-                  data-price="${price}">
-                  ADD TO CART
-                </button>
-              `
-            }
-
-          </div>
-
-        </article>
+        </div>
       `;
 
     }).join("");
 }
 
-function loadLocalProducts() {
 
-  onSnapshot(
-    query(
-      collection(db,"products"),
-      where("type","==","local")
-    ),
-    snapshot => {
+// ============================================================
+// OPEN SHOP
+// ============================================================
 
-      renderProducts(
-        snapshot.docs,
-        "localProducts"
-      );
+window.openShop = function(shopId) {
 
-    },
-    console.error
-  );
-}
-
-function loadAffiliateProducts() {
-
-  onSnapshot(
-    query(
-      collection(db,"products"),
-      where("type","==","affiliate")
-    ),
-    snapshot => {
-
-      renderProducts(
-        snapshot.docs,
-        "affiliateProducts",
-        true
-      );
-
-    },
-    console.error
-  );
-}
-
-function loadMainBanner() {
-
-  if (!$("mainBanner")) return;
-
-  onSnapshot(
-    doc(db,"banner","main"),
-    snapshot => {
-
-      if (
-        snapshot.exists() &&
-        snapshot.data().url
-      ) {
-
-        $("mainBanner")
-          .style
-          .backgroundImage =
-          `url("${snapshot.data().url}")`;
-
-      }
-
-    },
-    console.error
-  );
-}
-
-let searchTimer = null;
-
-function searchProducts() {
-
-  clearTimeout(searchTimer);
-
-  searchTimer =
-    setTimeout(async () => {
-
-      const value =
-        $("search")
-          ?.value
-          .trim()
-          .toLowerCase();
-
-      if (!value) {
-
-        loadLocalProducts();
-
-        return;
-      }
-
-      const snapshot =
-        await getDocs(
-          query(
-            collection(db,"products"),
-            where(
-              "type",
-              "==",
-              "local"
-            )
-          )
-        );
-
-      const filtered =
-        snapshot.docs.filter(d => {
-
-          return String(
-            d.data().name || ""
-          )
-          .toLowerCase()
-          .includes(value);
-
-        });
-
-      renderProducts(
-        filtered,
-        "localProducts"
-      );
-
-    },300);
-
-}
-
-window.searchProducts =
-  searchProducts;
-
-async function placeOrder() {
-
-  if (!cart.length) {
-    return toast(
-      "Cart khali hai ❌"
+  const shop =
+    allShops.find(
+      item => item.id === shopId
     );
+
+  if (!shop) return;
+
+  const products =
+    allProducts.filter(
+      product =>
+        product.shopId === shopId
+    );
+
+  renderProductList(
+    products,
+    $("productList")
+  );
+
+  const title =
+    $("shopTitle");
+
+  if (title) {
+    title.innerText =
+      shop.name || "Shop";
   }
 
-  const user =
-    auth.currentUser;
+  window.scrollTo({
+    top: 0,
+    behavior: "smooth"
+  });
+};
 
-  if (!user) {
 
-    $("loginBox")
-      ?.classList.remove(
-        "hidden"
-      );
+// ============================================================
+// LOAD PRODUCTS
+// ============================================================
 
-    return toast(
-      "Pehle OTP login karo."
-    );
-  }
-
-  const address =
-    $("address")
-      ?.value
-      .trim();
-
-  if (!address) {
-    return toast(
-      "Address daalo."
-    );
-  }
-
-  const total =
-    cart.reduce(
-      (s,x) =>
-        s + Number(x.price || 0),
-      0
-    );
-
-  const deliveryOTP =
-    String(
-      Math.floor(
-        1000 +
-        Math.random() * 9000
-      )
-    );
+async function loadProducts() {
 
   try {
 
-    const ref =
+    const snapshot =
+      await getDocs(
+        collection(db, "products")
+      );
+
+    allProducts = [];
+
+    snapshot.forEach(item => {
+
+      const data = item.data();
+
+      allProducts.push({
+        id: item.id,
+        ...data
+      });
+
+    });
+
+    renderProductList(
+      allProducts,
+      $("productList")
+    );
+
+    renderFeaturedProducts();
+
+  } catch (error) {
+
+    console.error(
+      "Products loading error:",
+      error
+    );
+  }
+}
+
+
+// ============================================================
+// RENDER PRODUCTS
+// ============================================================
+
+function renderProductList(
+  products,
+  container
+) {
+
+  if (!container) return;
+
+  if (!products.length) {
+
+    container.innerHTML =
+      "<p>Product nahi mila.</p>";
+
+    return;
+  }
+
+  container.innerHTML =
+    products.map(product => {
+
+      const name =
+        escapeHTML(
+          product.name || "Product"
+        );
+
+      const price =
+        Number(
+          product.price || 0
+        );
+
+      const image =
+        product.photo ||
+        product.image ||
+        "https://via.placeholder.com/300x220";
+
+      const stock =
+        Number(
+          product.stock ?? 1
+        );
+
+      return `
+        <div class="product-card">
+
+          <img
+            src="${image}"
+            alt="${name}"
+          >
+
+          <h3>${name}</h3>
+
+          <p class="price">
+            ₹${price}
+          </p>
+
+          ${
+            stock <= 0
+
+            ? `
+              <button disabled>
+                OUT OF STOCK
+              </button>
+            `
+
+            : `
+              <button
+                onclick="addToCart(
+                  '${product.id}'
+                )"
+              >
+                ADD TO CART
+              </button>
+            `
+          }
+
+        </div>
+      `;
+
+    }).join("");
+}
+
+
+// ============================================================
+// FEATURED PRODUCTS
+// ============================================================
+
+function renderFeaturedProducts() {
+
+  const container =
+    $("featuredProducts");
+
+  if (!container) return;
+
+  const products =
+    allProducts.slice(0, 10);
+
+  renderProductList(
+    products,
+    container
+  );
+}
+
+
+// ============================================================
+// SEARCH
+// ============================================================
+
+window.searchProducts = function() {
+
+  const input =
+    $("searchInput");
+
+  if (!input) return;
+
+  const value =
+    input.value
+      .trim()
+      .toLowerCase();
+
+  if (!value) {
+
+    renderProductList(
+      allProducts,
+      $("productList")
+    );
+
+    return;
+  }
+
+  const results =
+    allProducts.filter(product => {
+
+      const name =
+        String(
+          product.name || ""
+        ).toLowerCase();
+
+      const category =
+        String(
+          product.category || ""
+        ).toLowerCase();
+
+      return (
+        name.includes(value) ||
+        category.includes(value)
+      );
+    });
+
+  renderProductList(
+    results,
+    $("productList")
+  );
+};
+
+
+// ============================================================
+// CATEGORY FILTER
+// ============================================================
+
+window.filterCategory = function(category) {
+
+  if (!category) return;
+
+  const results =
+    allProducts.filter(product => {
+
+      return String(
+        product.category || ""
+      ).toLowerCase()
+        === category.toLowerCase();
+
+    });
+
+  renderProductList(
+    results,
+    $("productList")
+  );
+};
+
+
+// ============================================================
+// CART
+// ============================================================
+
+window.addToCart = function(productId) {
+
+  const product =
+    allProducts.find(
+      item => item.id === productId
+    );
+
+  if (!product) {
+
+    showToast(
+      "Product nahi mila"
+    );
+
+    return;
+  }
+
+  const existing =
+    cart.find(
+      item => item.id === productId
+    );
+
+  if (existing) {
+
+    existing.quantity += 1;
+
+  } else {
+
+    cart.push({
+
+      id: product.id,
+
+      name:
+        product.name || "Product",
+
+      price:
+        Number(product.price || 0),
+
+      image:
+        product.photo ||
+        product.image ||
+        "",
+
+      shopId:
+        product.shopId || "",
+
+      quantity: 1
+
+    });
+  }
+
+  saveCart();
+
+  updateCartUI();
+
+  showToast(
+    "Cart me add ho gaya 🛒"
+  );
+};
+
+
+// ============================================================
+// SAVE CART
+// ============================================================
+
+function saveCart() {
+
+  localStorage.setItem(
+    "aio_customer_cart",
+    JSON.stringify(cart)
+  );
+}
+
+
+// ============================================================
+// REMOVE CART ITEM
+// ============================================================
+
+window.removeFromCart = function(index) {
+
+  if (
+    index < 0 ||
+    index >= cart.length
+  ) return;
+
+  cart.splice(index, 1);
+
+  saveCart();
+
+  updateCartUI();
+};
+
+
+// ============================================================
+// CHANGE QUANTITY
+// ============================================================
+
+window.changeQuantity = function(
+  index,
+  amount
+) {
+
+  if (!cart[index]) return;
+
+  cart[index].quantity += amount;
+
+  if (
+    cart[index].quantity <= 0
+  ) {
+    cart.splice(index, 1);
+  }
+
+  saveCart();
+
+  updateCartUI();
+};
+
+
+// ============================================================
+// CART TOTAL
+// ============================================================
+
+function getCartTotal() {
+
+  return cart.reduce(
+    (total, item) =>
+      total +
+      (
+        Number(item.price || 0) *
+        Number(item.quantity || 1)
+      ),
+    0
+  );
+}
+
+
+// ============================================================
+// CART UI
+// ============================================================
+
+function updateCartUI() {
+
+  const count =
+    $("cartCount");
+
+  const total =
+    $("cartTotal");
+
+  const items =
+    $("cartItems");
+
+  const itemCount =
+    cart.reduce(
+      (sum, item) =>
+        sum +
+        Number(item.quantity || 1),
+      0
+    );
+
+  if (count) {
+    count.innerText =
+      itemCount;
+  }
+
+  if (total) {
+    total.innerText =
+      getCartTotal();
+  }
+
+  if (!items) return;
+
+  if (!cart.length) {
+
+    items.innerHTML =
+      "<p>Cart khali hai 🛒</p>";
+
+    return;
+  }
+
+  items.innerHTML =
+    cart.map(
+      (item, index) => {
+
+        return `
+          <div class="cart-item">
+
+            <img
+              src="${item.image}"
+              alt=""
+            >
+
+            <div>
+
+              <strong>
+                ${escapeHTML(item.name)}
+              </strong>
+
+              <p>
+                ₹${item.price}
+              </p>
+
+              <div>
+
+                <button
+                  onclick="changeQuantity(${index}, -1)"
+                >
+                  −
+                </button>
+
+                <span>
+                  ${item.quantity}
+                </span>
+
+                <button
+                  onclick="changeQuantity(${index}, 1)"
+                >
+                  +
+                </button>
+
+              </div>
+
+            </div>
+
+            <button
+              onclick="removeFromCart(${index})"
+            >
+              Remove
+            </button>
+
+          </div>
+        `;
+      }
+    ).join("");
+}
+
+
+// ============================================================
+// OPEN / CLOSE CART
+// ============================================================
+
+window.toggleCart = function() {
+
+  const cartBox =
+    $("cartBox");
+
+  if (!cartBox) return;
+
+  if (
+    cartBox.style.display ===
+    "none" ||
+    !cartBox.style.display
+  ) {
+
+    cartBox.style.display =
+      "block";
+
+  } else {
+
+    cartBox.style.display =
+      "none";
+  }
+};
+
+
+// ============================================================
+// PLACE COD ORDER
+// ============================================================
+
+window.placeCODOrder = async function() {
+
+  if (!currentUser) {
+
+    showToast(
+      "Order ke liye login karo"
+    );
+
+    return;
+  }
+
+  if (!cart.length) {
+
+    showToast(
+      "Cart khali hai"
+    );
+
+    return;
+  }
+
+  const phone =
+    currentUser.phoneNumber ||
+    prompt("Mobile number daalo");
+
+  const address =
+    prompt(
+      "Complete delivery address daalo"
+    );
+
+  if (!address) {
+
+    showToast(
+      "Address required hai"
+    );
+
+    return;
+  }
+
+  const total =
+    getCartTotal();
+
+  try {
+
+    const orderData = {
+
+      customerId:
+        currentUser.uid,
+
+      customerPhone:
+        phone,
+
+      items:
+        cart,
+
+      total:
+        total,
+
+      paymentMethod:
+        "COD",
+
+      status:
+        "NEW",
+
+      address:
+        address,
+
+      createdAt:
+        serverTimestamp()
+
+    };
+
+    const orderRef =
       await addDoc(
-        collection(
-          db,
-          "orders"
-        ),
-        {
-          userId:user.uid,
-          phone:user.phoneNumber || "",
-          address,
-          items:cart,
-          total,
-          paymentMethod:"COD",
-          status:"NEW",
-          deliveryOTP,
-          createdAt:
-            serverTimestamp()
-        }
+        collection(db, "orders"),
+        orderData
       );
 
     cart = [];
 
     saveCart();
 
-    toggleCart(false);
+    updateCartUI();
 
-    alert(
-      "Order Successfully Place Ho Gaya ✅\n\n" +
-      "Payment: CASH ON DELIVERY\n" +
-      "Order ID: " +
-      ref.id +
-      "\n\n" +
-      "Delivery OTP: " +
-      deliveryOTP
+    showToast(
+      "Order successfully place ho gaya ✅"
     );
 
-  } catch(error) {
+    if ($("cartBox")) {
+      $("cartBox").style.display =
+        "none";
+    }
 
-    console.error(error);
-
-    toast(
-      "Order failed: " +
-      error.message
+    console.log(
+      "Order ID:",
+      orderRef.id
     );
 
+  } catch (error) {
+
+    console.error(
+      "Order error:",
+      error
+    );
+
+    showToast(
+      "Order place nahi hua ❌"
+    );
   }
-}
+};
 
-window.placeOrder = placeOrder;
-window.placeCODOrder = placeOrder;
 
-onAuthStateChanged(
-  auth,
-  user => {
+// ============================================================
+// MY ORDERS
+// ============================================================
 
-    const status =
-      $("loginStatus");
+async function loadMyOrders() {
 
-    if (status) {
+  if (!currentUser) return;
 
-      status.textContent =
-        user
-          ? "Logged in"
-          : "Guest";
+  const container =
+    $("myOrders");
 
-    }
+  if (!container) return;
 
-  }
-);
+  try {
 
-document.addEventListener(
-  "click",
-  event => {
-
-    const add =
-      event.target.closest(
-        "[data-add]"
-      );
-
-    if (add) {
-
-      addCart(
-        add.dataset.add,
-        add.dataset.name,
-        add.dataset.price
-      );
-
-      return;
-    }
-
-    const remove =
-      event.target.closest(
-        "[data-remove]"
-      );
-
-    if (remove) {
-
-      removeCart(
-        Number(
-          remove.dataset.remove
+    const q =
+      query(
+        collection(db, "orders"),
+        where(
+          "customerId",
+          "==",
+          currentUser.uid
         )
       );
 
-      return;
-    }
+    const snapshot =
+      await getDocs(q);
 
-    const buy =
-      event.target.closest(
-        "[data-buy]"
-      );
+    if (snapshot.empty) {
 
-    if (
-      buy &&
-      buy.dataset.buy !== "#"
-    ) {
-
-      window.open(
-        buy.dataset.buy,
-        "_blank",
-        "noopener,noreferrer"
-      );
+      container.innerHTML =
+        "<p>Abhi koi order nahi hai.</p>";
 
       return;
     }
 
-    if (
-      event.target.closest(
-        "[data-cart]"
-      )
-    ) {
+    const orders = [];
 
-      toggleCart();
+    snapshot.forEach(item => {
 
-      return;
-    }
+      orders.push({
+        id: item.id,
+        ...item.data()
+      });
 
-    if (
-      event.target.closest(
-        "[data-login]"
-      )
-    ) {
+    });
 
-      $("loginBox")
-        ?.classList.remove(
-          "hidden"
-        );
+    orders.sort(
+      (a, b) =>
+        String(b.createdAt || "")
+          .localeCompare(
+            String(a.createdAt || "")
+          )
+    );
 
-      return;
-    }
+    container.innerHTML =
+      orders.map(order => {
 
-    if (
-      event.target.closest(
-        "[data-close-login]"
-      )
-    ) {
+        return `
+          <div class="order-card">
 
-      $("loginBox")
-        ?.classList.add(
-          "hidden"
-        );
+            <strong>
+              Order #${escapeHTML(order.id)}
+            </strong>
 
-    }
+            <p>
+              Total: ₹${Number(order.total || 0)}
+            </p>
 
+            <p>
+              Payment:
+              ${escapeHTML(
+                order.paymentMethod || "COD"
+              )}
+            </p>
+
+            <p>
+              Status:
+              <strong>
+                ${escapeHTML(
+                  order.status || "NEW"
+                )}
+              </strong>
+            </p>
+
+          </div>
+        `;
+
+      }).join("");
+
+  } catch (error) {
+
+    console.error(
+      "Orders error:",
+      error
+    );
   }
-);
+}
+
+
+// ============================================================
+// REAL-TIME ORDER STATUS
+// ============================================================
+
+function listenToMyOrders() {
+
+  if (!currentUser) return;
+
+  const q =
+    query(
+      collection(db, "orders"),
+      where(
+        "customerId",
+        "==",
+        currentUser.uid
+      )
+    );
+
+  onSnapshot(
+    q,
+    snapshot => {
+
+      console.log(
+        "Orders updated:",
+        snapshot.size
+      );
+
+      loadMyOrders();
+    },
+    error => {
+
+      console.error(
+        "Order listener error:",
+        error
+      );
+    }
+  );
+}
+
+
+// ============================================================
+// BANNER
+// ============================================================
+
+function loadBanner() {
+
+  const banner =
+    $("mainBanner");
+
+  if (!banner) return;
+
+  onSnapshot(
+    doc(
+      db,
+      "banner",
+      "main"
+    ),
+    snapshot => {
+
+      if (!snapshot.exists()) return;
+
+      const data =
+        snapshot.data();
+
+      if (data.url) {
+
+        banner.style.backgroundImage =
+          `url("${data.url}")`;
+      }
+
+    },
+    error => {
+
+      console.error(
+        "Banner error:",
+        error
+      );
+    }
+  );
+}
+
+
+// ============================================================
+// FLASH SALE TIMER
+// ============================================================
+
+let flashTime =
+  3 * 60 * 60;
+
+function startFlashTimer() {
+
+  const timer =
+    $("flashTimer");
+
+  if (!timer) return;
+
+  setInterval(() => {
+
+    if (flashTime <= 0) {
+      flashTime =
+        3 * 60 * 60;
+    }
+
+    flashTime--;
+
+    const hours =
+      Math.floor(
+        flashTime / 3600
+      );
+
+    const minutes =
+      Math.floor(
+        (flashTime % 3600) / 60
+      );
+
+    const seconds =
+      flashTime % 60;
+
+    timer.innerText =
+      `${String(hours).padStart(2, "0")}:` +
+      `${String(minutes).padStart(2, "0")}:` +
+      `${String(seconds).padStart(2, "0")}`;
+
+  }, 1000);
+}
+
+
+// ============================================================
+// INITIALIZE
+// ============================================================
 
 document.addEventListener(
   "DOMContentLoaded",
-  () => {
+  async () => {
 
     updateCartUI();
 
-    loadLocalProducts();
+    setupRecaptcha();
 
-    loadAffiliateProducts();
+    await loadShops();
 
-    loadMainBanner();
+    await loadProducts();
 
-    setupRecaptcha()
-      .catch(console.error);
+    loadBanner();
 
-    let time = 10800;
+    startFlashTimer();
 
-    setInterval(() => {
-
-      time--;
-
-      if (time <= 0) {
-        time = 10800;
-      }
-
-      if ($("timer")) {
-
-        const h =
-          Math.floor(time / 3600);
-
-        const m =
-          Math.floor(
-            (time % 3600) / 60
-          );
-
-        const s =
-          time % 60;
-
-        $("timer").textContent =
-          `${String(h).padStart(2,"0")}:` +
-          `${String(m).padStart(2,"0")}:` +
-          `${String(s).padStart(2,"0")}`;
-
-      }
-
-    },1000);
+    if (currentUser) {
+      listenToMyOrders();
+    }
 
   }
 );
 
-if ("serviceWorker" in navigator) {
 
-  navigator.serviceWorker
-    .register("sw.js")
-    .catch(console.error);
+// ============================================================
+// GLOBAL ACCESS
+// ============================================================
 
-}
+window.AIO = {
+
+  auth,
+  db,
+
+  get currentUser() {
+    return currentUser;
+  },
+
+  get cart() {
+    return cart;
+  },
+
+  get products() {
+    return allProducts;
+  },
+
+  get shops() {
+    return allShops;
+  }
+
+};
+
+console.log(
+  "AIO DIGITAL MALL Customer App Loaded ✅"
+);
