@@ -3,143 +3,122 @@
 
 <head>
 
-<meta charset="UTF-8">
+  <meta charset="UTF-8">
 
-<meta
-  name="viewport"
-  content="width=device-width, initial-scale=1.0">
+  <meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+  >
 
-<link
-  rel="manifest"
-  href="manifest.json">
+  <meta
+    name="theme-color"
+    content="#ff6600"
+  >
 
-<title>AIO DIGITAL MALL — TEAM</title>
+  <link
+    rel="manifest"
+    href="./manifest.json"
+  >
 
-<style>
+  <title>AIO DIGITAL MALL - TEAM</title>
 
-*{
-  box-sizing:border-box;
-}
+  <style>
 
-body{
-  margin:0;
-  font-family:Arial,sans-serif;
-  background:#111;
-  color:#eee;
-}
+    * {
+      box-sizing: border-box;
+    }
 
-header{
-  background:#1c1c1c;
-  padding:15px 4%;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  position:sticky;
-  top:0;
-  z-index:100;
-}
+    body {
+      margin: 0;
+      font-family: Arial,sans-serif;
+      background: #111;
+      color: #fff;
+    }
 
-.brand{
-  color:#ff6600;
-  font-weight:900;
-}
+    header {
+      background: #ff6600;
+      padding: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
 
-main{
-  max-width:1200px;
-  margin:auto;
-  padding:18px;
-}
+    .wrap {
+      max-width: 1200px;
+      margin: auto;
+      padding: 15px;
+    }
 
-.grid{
-  display:grid;
-  grid-template-columns:
-    repeat(auto-fit,minmax(230px,1fr));
-  gap:15px;
-}
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
 
-.panel{
-  background:#1d1d1d;
-  border:1px solid #333;
-  border-radius:16px;
-  padding:16px;
-  margin-bottom:16px;
-}
+    .card {
+      background: #1d1d1d;
+      border-radius: 14px;
+      padding: 18px;
+      margin-bottom: 18px;
+    }
 
-input,
-select{
-  width:100%;
-  padding:12px;
-  margin:6px 0;
-  background:#111;
-  color:white;
-  border:1px solid #444;
-  border-radius:9px;
-}
+    input,
+    select {
+      width: 100%;
+      padding: 12px;
+      margin: 6px 0;
+      border-radius: 8px;
+      border: 1px solid #444;
+      background: #222;
+      color: #fff;
+    }
 
-button{
-  border:0;
-  border-radius:9px;
-  padding:10px 14px;
-  cursor:pointer;
-  font-weight:700;
-}
+    button {
+      border: 0;
+      padding: 11px 15px;
+      border-radius: 8px;
+      background: #ff6600;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      margin: 4px;
+    }
 
-.primary{
-  background:#ff6600;
-  color:white;
-}
+    button.danger {
+      background: #d32f2f;
+    }
 
-.secondary{
-  background:#333;
-  color:white;
-}
+    .stats {
+      display: grid;
+      grid-template-columns:
+        repeat(auto-fit,minmax(150px,1fr));
+      gap: 12px;
+    }
 
-.danger{
-  background:#e53935;
-  color:white;
-}
+    .stat {
+      background: #222;
+      padding: 18px;
+      border-radius: 12px;
+    }
 
-.hidden{
-  display:none!important;
-}
+    .stat strong {
+      display: block;
+      font-size: 28px;
+      color: #ff8a3d;
+    }
 
-.stats{
-  font-size:30px;
-  font-weight:900;
-}
+    .list {
+      display: grid;
+      gap: 10px;
+    }
 
-.item{
-  padding:14px;
-  border-bottom:1px solid #333;
-}
+    .item {
+      background: #252525;
+      padding: 14px;
+      border-radius: 10px;
+    }
 
-.login{
-  max-width:420px;
-  margin:70px auto;
-}
-
-.message{
-  position:fixed;
-  bottom:20px;
-  left:50%;
-  transform:
-    translate(-50%,30px);
-  opacity:0;
-  background:#ff6600;
-  color:white;
-  padding:12px 18px;
-  border-radius:10px;
-  transition:.25s;
-  z-index:1000;
-}
-
-.message.show{
-  opacity:1;
-  transform:
-    translate(-50%,0);
-}
-
-</style>
+  </style>
 
 </head>
 
@@ -147,299 +126,118 @@ button{
 
 <header>
 
-<div class="brand">
-🚩 AIO DIGITAL MALL — TEAM
-</div>
+  <div class="top">
 
-<button
-  id="logoutBtn"
-  class="secondary">
-LOGOUT
-</button>
+    <strong>
+      🚩 AIO DIGITAL MALL
+    </strong>
+
+    <div>
+      <span id="teamUser">
+        Guest
+      </span>
+
+      <button onclick="teamLogout()">
+        Logout
+      </button>
+    </div>
+
+  </div>
 
 </header>
 
-<div
-  id="loginScreen"
-  class="login panel">
-
-<h2>
-🔐 Team Login
-</h2>
-
-<input
-  id="teamPhone"
-  type="tel"
-  placeholder="+919876543210">
-
-<button
-  class="primary"
-  onclick="sendOTP()">
-OTP BHEJO
-</button>
-
-<input
-  id="teamOTP"
-  placeholder="OTP">
-
-<button
-  class="primary"
-  onclick="verifyOTP()">
-VERIFY
-</button>
-
-<div id="recaptcha"></div>
-
-</div>
-
-<main
-  id="dashboard"
-  class="hidden">
-
-<div class="grid">
-
-<div class="panel">
-<div
-  class="stats"
-  id="ordersCount">
-0
-</div>
-Orders
-</div>
-
-<div class="panel">
-<div
-  class="stats"
-  id="productsCount">
-0
-</div>
-Products
-</div>
-
-<div class="panel">
-<div
-  class="stats"
-  id="shopsCount">
-0
-</div>
-Shops
-</div>
-
-</div>
-
-<div class="grid">
-
-<section class="panel">
-
-<h2>
-🏪 Add Local Shop
-</h2>
-
-<input
-  id="shopName"
-  placeholder="Shop Name">
-
-<select id="shopCategory">
-
-<option>Hotel & Food</option>
-<option>Grocery</option>
-<option>Fashion</option>
-<option>Electronics</option>
-<option>Education</option>
-<option>Jewellery</option>
-<option>Property</option>
-<option>Mobile & AC</option>
-
-</select>
+<div class="wrap">
 
-<button
-  class="primary"
-  onclick="saveShop()">
-ADD SHOP
-</button>
-
-</section>
+  <div class="card">
 
+    <h2>
+      🔐 Team Login
+    </h2>
 
-<section class="panel">
+    <input
+      id="teamEmail"
+      type="email"
+      placeholder="Team Email"
+    >
 
-<h2>
-📦 Add Local Product
-</h2>
+    <input
+      id="teamPassword"
+      type="password"
+      placeholder="Password"
+    >
 
-<input
-  id="pName"
-  placeholder="Product Name">
+    <button onclick="teamLogin()">
+      LOGIN
+    </button>
 
-<input
-  id="pPrice"
-  type="number"
-  placeholder="Price ₹">
+  </div>
 
-<input
-  id="pPhoto"
-  placeholder="Product Image URL">
+  <div id="teamPanel">
 
-<select id="pCategory">
+    <div class="stats">
 
-<option>Grocery</option>
-<option>Hotel & Food</option>
-<option>Fashion</option>
-<option>Electronics</option>
-<option>Education</option>
-<option>Jewellery</option>
-<option>Property</option>
-<option>Mobile & AC</option>
+      <div class="stat">
+        <span>New Orders</span>
+        <strong id="newOrders">0</strong>
+      </div>
 
-</select>
+      <div class="stat">
+        <span>Total Orders</span>
+        <strong id="totalOrders">0</strong>
+      </div>
 
-<input
-  id="pStock"
-  type="number"
-  value="1"
-  min="0"
-  placeholder="Stock">
+      <div class="stat">
+        <span>Products</span>
+        <strong id="totalProducts">0</strong>
+      </div>
 
-<button
-  class="primary"
-  onclick="saveProduct()">
-SAVE PRODUCT
-</button>
+      <div class="stat">
+        <span>Shops</span>
+        <strong id="totalShops">0</strong>
+      </div>
 
-</section>
+    </div>
 
+    <br>
 
-<section class="panel">
+    <div class="card">
 
-<h2>
-🛒 Amazon / Affiliate
-</h2>
+      <h2>
+        📦 Quick Operations
+      </h2>
 
-<input
-  id="aName"
-  placeholder="Affiliate Product Name">
+      <button
+        onclick="window.location.href='dashboard.html'"
+      >
+        OPEN DASHBOARD
+      </button>
 
-<input
-  id="aPrice"
-  type="number"
-  placeholder="Display Price ₹">
+      <button
+        onclick="window.location.href='dashboard-panel.html'"
+      >
+        OPEN FULL PANEL
+      </button>
 
-<input
-  id="aPhoto"
-  placeholder="Product Image URL">
+      <button
+        onclick="window.open('../coustemer/index.html','_blank')"
+      >
+        CUSTOMER WEBSITE
+      </button>
 
-<input
-  id="aLink"
-  placeholder="Amazon Product Link">
+      <button onclick="refreshTeamData()">
+        🔄 REFRESH
+      </button>
 
-<button
-  class="primary"
-  onclick="saveAffiliate()">
-SAVE AFFILIATE PRODUCT
-</button>
+    </div>
 
-</section>
+  </div>
 
-
-<section class="panel">
-
-<h2>
-🖼️ Main Banner
-</h2>
-
-<input
-  id="bannerUrl"
-  placeholder="Banner Image URL">
-
-<button
-  class="primary"
-  onclick="saveBanner()">
-UPDATE BANNER
-</button>
-
-</section>
-
-</div>
-
-
-<section class="panel">
-
-<h2>
-📸 Duty Attendance
-</h2>
-
-<input
-  id="selfie"
-  type="file"
-  accept="image/*"
-  capture="camera">
-
-<br><br>
-
-<button
-  class="primary"
-  onclick="uploadSelfie()">
-DUTY IN
-</button>
-
-<button
-  class="secondary"
-  onclick="dutyOff()">
-DUTY OFF
-</button>
-
-</section>
-
-
-<section class="panel">
-
-<h2>
-📦 Live COD Orders
-</h2>
-
-<div id="ordersList">
-Loading orders...
-</div>
-
-</section>
-
-
-<section class="panel">
-
-<h2>
-🛍️ Live Products
-</h2>
-
-<div id="productsList">
-Loading products...
-</div>
-
-</section>
-
-
-<section class="panel">
-
-<h2>
-🏪 Live Shops
-</h2>
-
-<div id="shopsList">
-Loading shops...
-</div>
-
-</section>
-
-</main>
-
-<div
-  id="message"
-  class="message">
 </div>
 
 <script
   type="module"
-  src="app.js">
-</script>
+  src="./app.js"
+></script>
 
 </body>
 
