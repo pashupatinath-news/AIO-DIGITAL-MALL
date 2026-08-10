@@ -1,19 +1,14 @@
 {
   "name": "AIO DIGITAL MALL",
   "short_name": "AIO MALL",
-  "description": "AIO DIGITAL MALL - Food, Grocery, Fashion, Electronics, Education and Local Shops",
+  "description": "AIO Digital Mall Customer App",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#ffffff",
+  "background_color": "#fff8f0",
   "theme_color": "#ff6600",
   "lang": "en-IN",
-  "categories": [
-    "shopping",
-    "food",
-    "business"
-  ],
   "icons": [
     {
       "src": "./icon-192.png",
