@@ -1,20 +1,31 @@
 {
   "name": "AIO DIGITAL MALL",
-  "short_name": "AIO Mall",
+  "short_name": "AIO MALL",
+  "description": "AIO DIGITAL MALL - Food, Grocery, Fashion, Electronics, Education and Local Shops",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#FFF8F0",
-  "theme_color": "#FF6600",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#ff6600",
+  "lang": "en-IN",
+  "categories": [
+    "shopping",
+    "food",
+    "business"
+  ],
   "icons": [
     {
-      "src": "icon-192.png",
+      "src": "./icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
-      "src": "icon-512.png",
+      "src": "./icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
