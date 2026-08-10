@@ -1,8 +1,7 @@
 // =====================================================
 // AIO DIGITAL MALL
-// ROOT APP.JS
-// EMAIL + GOOGLE LOGIN
-// FIRESTORE + CART + PRODUCTS + ORDERS
+// ROOT CUSTOMER APP
+// Firebase + Products + Cart + Phone Login
 // =====================================================
 
 import {
@@ -11,11 +10,11 @@ import {
 
 import {
   getAuth,
+  RecaptchaVerifier,
+  signInWithPhoneNumber,
+  onAuthStateChanged,
   GoogleAuthProvider,
   signInWithPopup,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  onAuthStateChanged,
   signOut
 } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
 
@@ -23,16 +22,13 @@ import {
   getFirestore,
   collection,
   addDoc,
-  doc,
-  setDoc,
-  getDocs,
   onSnapshot,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
 
 
 // =====================================================
-// FIREBASE
+// FIREBASE CONFIG
 // =====================================================
 
 const firebaseConfig = {
@@ -45,29 +41,24 @@ const firebaseConfig = {
   measurementId: "G-TNDT9FYNRP"
 };
 
+
+// =====================================================
+// FIREBASE START
+// =====================================================
+
 const app = initializeApp(firebaseConfig);
+
 const auth = getAuth(app);
+
 const db = getFirestore(app);
-
-
-// =====================================================
-// STATE
-// =====================================================
-
-let currentUser = null;
-let products = [];
-
-let cart = JSON.parse(
-  localStorage.getItem("aio_cart") || "[]"
-);
 
 
 // =====================================================
 // HELPERS
 // =====================================================
 
-const $ = id =>
-  document.getElementById(id);
+const $ = id => document.getElementById(id);
+
 
 function escapeHTML(value) {
 
@@ -79,43 +70,335 @@ function escapeHTML(value) {
     .replace(/'/g, "&#039;");
 }
 
+
 function money(value) {
 
   return `₹${Number(value || 0).toLocaleString("en-IN")}`;
-}
 
-function showStatus(message) {
-
-  const status = $("loginStatus");
-
-  if (status) {
-    status.textContent = message;
-  }
-
-  console.log(message);
 }
 
 
 // =====================================================
-// LOGIN MODAL
+// GLOBAL STATE
 // =====================================================
 
-function openLogin() {
+let products = [];
 
-  const modal = $("loginModal");
+let cart = [];
 
-  if (modal) {
-    modal.classList.add("active");
+try {
+
+  cart =
+    JSON.parse(
+      localStorage.getItem("aio_cart") || "[]"
+    );
+
+  if (!Array.isArray(cart)) {
+    cart = [];
   }
+
+} catch {
+
+  cart = [];
+
 }
 
-function closeLogin() {
 
-  const modal = $("loginModal");
+let confirmationResult = null;
 
-  if (modal) {
-    modal.classList.remove("active");
+let recaptchaVerifier = null;
+
+let recaptchaRendered = false;
+
+
+// =====================================================
+// PHONE LOGIN - RECAPTCHA
+// =====================================================
+
+function setupRecaptcha() {
+
+  if (!$("recaptcha-container")) {
+    return;
   }
+
+  if (recaptchaVerifier) {
+    return;
+  }
+
+  try {
+
+    recaptchaVerifier =
+      new RecaptchaVerifier(
+        auth,
+        "recaptcha-container",
+        {
+          size: "invisible"
+        }
+      );
+
+    recaptchaVerifier
+      .render()
+      .then(() => {
+
+        recaptchaRendered = true;
+
+      })
+      .catch(error => {
+
+        console.error(
+          "Recaptcha render error:",
+          error
+        );
+
+      });
+
+  } catch (error) {
+
+    console.error(
+      "Recaptcha setup error:",
+      error
+    );
+
+  }
+
+}
+
+
+// =====================================================
+// SEND OTP
+// =====================================================
+
+async function sendOTP() {
+
+  const input = $("phoneInput");
+
+  if (!input) {
+    return;
+  }
+
+  let phone =
+    input.value.trim();
+
+  if (!phone) {
+
+    alert(
+      "Mobile number daalo."
+    );
+
+    return;
+  }
+
+
+  phone =
+    phone.replace(
+      /[\s-]/g,
+      ""
+    );
+
+
+  if (!phone.startsWith("+")) {
+
+    alert(
+      "Country code ke saath number daalo.\n\n" +
+      "Example:\n+919876543210"
+    );
+
+    return;
+  }
+
+
+  const button =
+    $("sendOtpButton");
+
+
+  try {
+
+    if (button) {
+      button.disabled = true;
+      button.textContent = "SENDING...";
+    }
+
+
+    setupRecaptcha();
+
+
+    if (!recaptchaVerifier) {
+
+      throw new Error(
+        "reCAPTCHA initialize nahi hua."
+      );
+
+    }
+
+
+    confirmationResult =
+      await signInWithPhoneNumber(
+        auth,
+        phone,
+        recaptchaVerifier
+      );
+
+
+    if ($("otpInput")) {
+      $("otpInput").style.display =
+        "block";
+    }
+
+
+    if ($("verifyOtpButton")) {
+      $("verifyOtpButton").style.display =
+        "block";
+    }
+
+
+    if ($("loginStatus")) {
+
+      $("loginStatus").textContent =
+        "OTP bhej diya gaya ✅";
+
+    }
+
+
+    alert(
+      "OTP bhej diya gaya ✅"
+    );
+
+
+  } catch (error) {
+
+    console.error(
+      "OTP send error:",
+      error
+    );
+
+
+    if ($("loginStatus")) {
+
+      $("loginStatus").textContent =
+        error.message ||
+        "OTP send nahi hua.";
+
+    }
+
+
+    alert(
+      "OTP send nahi hua ❌\n\n" +
+      (error.message || error)
+    );
+
+
+    /*
+      reCAPTCHA reset
+    */
+
+    try {
+
+      if (recaptchaVerifier) {
+        recaptchaVerifier.clear();
+      }
+
+    } catch {}
+
+
+    recaptchaVerifier = null;
+    recaptchaRendered = false;
+
+
+  } finally {
+
+    if (button) {
+
+      button.disabled = false;
+      button.textContent = "SEND OTP";
+
+    }
+
+  }
+
+}
+
+
+// =====================================================
+// VERIFY OTP
+// =====================================================
+
+async function verifyOTP() {
+
+  const input =
+    $("otpInput");
+
+  if (!input) {
+    return;
+  }
+
+  const otp =
+    input.value.trim();
+
+
+  if (!confirmationResult) {
+
+    alert(
+      "Pehle OTP bhejo."
+    );
+
+    return;
+  }
+
+
+  if (!otp) {
+
+    alert(
+      "OTP daalo."
+    );
+
+    return;
+  }
+
+
+  try {
+
+    const result =
+      await confirmationResult.confirm(
+        otp
+      );
+
+
+    console.log(
+      "Customer logged in:",
+      result.user.uid
+    );
+
+
+    if ($("loginStatus")) {
+
+      $("loginStatus").textContent =
+        "Login successful ✅";
+
+    }
+
+
+    alert(
+      "Login successful ✅"
+    );
+
+
+    closeLogin();
+
+
+  } catch (error) {
+
+    console.error(
+      "OTP verify error:",
+      error
+    );
+
+
+    alert(
+      "OTP galat hai ya expire ho gaya ❌"
+    );
+
+  }
+
 }
 
 
@@ -127,28 +410,25 @@ async function googleLogin() {
 
   try {
 
-    showStatus("Google login opening...");
-
     const provider =
       new GoogleAuthProvider();
 
-    provider.setCustomParameters({
-      prompt: "select_account"
-    });
-
-    const result =
-      await signInWithPopup(
-        auth,
-        provider
-      );
-
-    await createCustomerProfile(
-      result.user
+    await signInWithPopup(
+      auth,
+      provider
     );
 
-    showStatus("Google login successful ✅");
+
+    if ($("loginStatus")) {
+
+      $("loginStatus").textContent =
+        "Google login successful ✅";
+
+    }
+
 
     closeLogin();
+
 
   } catch (error) {
 
@@ -157,407 +437,14 @@ async function googleLogin() {
       error
     );
 
-    showStatus(
-      getAuthErrorMessage(error)
-    );
-  }
-}
 
-
-// =====================================================
-// EMAIL LOGIN / SIGNUP UI
-// =====================================================
-
-function createEmailLoginUI() {
-
-  const box =
-    document.querySelector(".modal-box");
-
-  if (!box) return;
-
-  const existing =
-    document.getElementById(
-      "emailLoginSection"
+    alert(
+      "Google login nahi hua ❌\n\n" +
+      error.message
     );
 
-  if (existing) return;
-
-  const section =
-    document.createElement("div");
-
-  section.id =
-    "emailLoginSection";
-
-  section.style.marginTop =
-    "10px";
-
-  section.innerHTML = `
-
-    <input
-      class="input"
-      id="emailInput"
-      type="email"
-      placeholder="Email address"
-      autocomplete="email"
-    >
-
-    <input
-      class="input"
-      id="passwordInput"
-      type="password"
-      placeholder="Password"
-      autocomplete="current-password"
-    >
-
-    <button
-      class="primary-btn"
-      id="emailLoginButton"
-      type="button"
-    >
-      LOGIN WITH EMAIL
-    </button>
-
-    <button
-      class="secondary-btn"
-      id="emailSignupButton"
-      type="button"
-    >
-      CREATE ACCOUNT
-    </button>
-
-  `;
-
-  const googleButton =
-    $("googleLoginButton");
-
-  if (googleButton) {
-
-    googleButton.before(section);
-
-  } else {
-
-    box.appendChild(section);
   }
 
-
-  $("emailLoginButton")
-    ?.addEventListener(
-      "click",
-      loginWithEmail
-    );
-
-  $("emailSignupButton")
-    ?.addEventListener(
-      "click",
-      signupWithEmail
-    );
-}
-
-
-// =====================================================
-// EMAIL LOGIN
-// =====================================================
-
-async function loginWithEmail() {
-
-  const email =
-    $("emailInput")
-      ?.value
-      .trim();
-
-  const password =
-    $("passwordInput")
-      ?.value;
-
-  if (!email) {
-
-    showStatus(
-      "Email daalo."
-    );
-
-    return;
-  }
-
-  if (!password) {
-
-    showStatus(
-      "Password daalo."
-    );
-
-    return;
-  }
-
-  try {
-
-    showStatus(
-      "Logging in..."
-    );
-
-    const result =
-      await signInWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-
-    await createCustomerProfile(
-      result.user
-    );
-
-    showStatus(
-      "Login successful ✅"
-    );
-
-    closeLogin();
-
-  } catch (error) {
-
-    console.error(
-      "Email login error:",
-      error
-    );
-
-    showStatus(
-      getAuthErrorMessage(error)
-    );
-  }
-}
-
-
-// =====================================================
-// EMAIL SIGNUP
-// =====================================================
-
-async function signupWithEmail() {
-
-  const email =
-    $("emailInput")
-      ?.value
-      .trim();
-
-  const password =
-    $("passwordInput")
-      ?.value;
-
-  if (!email) {
-
-    showStatus(
-      "Email daalo."
-    );
-
-    return;
-  }
-
-  if (!password) {
-
-    showStatus(
-      "Password daalo."
-    );
-
-    return;
-  }
-
-  if (password.length < 6) {
-
-    showStatus(
-      "Password minimum 6 characters ka hona chahiye."
-    );
-
-    return;
-  }
-
-  try {
-
-    showStatus(
-      "Account create ho raha hai..."
-    );
-
-    const result =
-      await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-
-    await createCustomerProfile(
-      result.user
-    );
-
-    showStatus(
-      "Account created successfully ✅"
-    );
-
-    closeLogin();
-
-  } catch (error) {
-
-    console.error(
-      "Signup error:",
-      error
-    );
-
-    showStatus(
-      getAuthErrorMessage(error)
-    );
-  }
-}
-
-
-// =====================================================
-// FIREBASE ERROR MESSAGE
-// =====================================================
-
-function getAuthErrorMessage(error) {
-
-  const code =
-    error?.code || "";
-
-  switch (code) {
-
-    case "auth/invalid-email":
-      return "Email address galat hai.";
-
-    case "auth/user-not-found":
-      return "Is email ka account nahi mila.";
-
-    case "auth/wrong-password":
-      return "Password galat hai.";
-
-    case "auth/invalid-credential":
-      return "Email ya password galat hai.";
-
-    case "auth/email-already-in-use":
-      return "Is email se account already bana hua hai.";
-
-    case "auth/weak-password":
-      return "Password minimum 6 characters ka rakho.";
-
-    case "auth/popup-closed-by-user":
-      return "Google login cancel kar diya gaya.";
-
-    case "auth/popup-blocked":
-      return "Browser ne Google popup block kar diya.";
-
-    case "auth/operation-not-allowed":
-      return "Firebase Authentication provider enabled nahi hai.";
-
-    case "auth/network-request-failed":
-      return "Internet connection check karo.";
-
-    default:
-      return (
-        "Login error: " +
-        (error?.message || "Unknown error")
-      );
-  }
-}
-
-
-// =====================================================
-// CUSTOMER PROFILE
-// =====================================================
-
-async function createCustomerProfile(user) {
-
-  if (!user) return;
-
-  try {
-
-    await setDoc(
-      doc(
-        db,
-        "customers",
-        user.uid
-      ),
-      {
-        uid: user.uid,
-        email: user.email || "",
-        name:
-          user.displayName ||
-          "Customer",
-        photo:
-          user.photoURL ||
-          "",
-        phone:
-          user.phoneNumber ||
-          "",
-        updatedAt:
-          serverTimestamp()
-      },
-      {
-        merge: true
-      }
-    );
-
-  } catch (error) {
-
-    console.error(
-      "Customer profile error:",
-      error
-    );
-  }
-}
-
-
-// =====================================================
-// AUTH STATE
-// =====================================================
-
-onAuthStateChanged(
-  auth,
-  async user => {
-
-    currentUser =
-      user || null;
-
-    window.currentUser =
-      currentUser;
-
-    updateAuthUI();
-
-    if (user) {
-
-      await createCustomerProfile(
-        user
-      );
-
-      showStatus(
-        user.email ||
-        user.displayName ||
-        "Logged in"
-      );
-
-    } else {
-
-      showStatus(
-        "Guest"
-      );
-    }
-  }
-);
-
-
-// =====================================================
-// AUTH UI
-// =====================================================
-
-function updateAuthUI() {
-
-  const loginButton =
-    $("loginButton");
-
-  if (!loginButton) return;
-
-  if (currentUser) {
-
-    loginButton.textContent =
-      "👤 Account";
-
-  } else {
-
-    loginButton.textContent =
-      "👤 Login";
-  }
 }
 
 
@@ -571,107 +458,180 @@ async function logout() {
 
     await signOut(auth);
 
-    closeLogin();
-
-    showStatus(
-      "Logout successful."
-    );
-
   } catch (error) {
 
     console.error(
       "Logout error:",
       error
     );
+
   }
+
 }
 
 
 // =====================================================
-// PRODUCTS
+// AUTH STATE
 // =====================================================
 
-function productCard(
-  id,
-  product
-) {
+onAuthStateChanged(
+  auth,
+  user => {
+
+    window.currentUser =
+      user || null;
+
+
+    const status =
+      $("loginStatus");
+
+
+    if (user) {
+
+      console.log(
+        "Logged in:",
+        user.phoneNumber ||
+        user.email ||
+        user.uid
+      );
+
+
+      if (status) {
+
+        status.textContent =
+          user.phoneNumber ||
+          user.email ||
+          "Logged in";
+
+      }
+
+
+      const loginButton =
+        $("loginButton");
+
+
+      if (loginButton) {
+
+        loginButton.textContent =
+          "👤 Account";
+
+      }
+
+    } else {
+
+      console.log(
+        "Customer not logged in"
+      );
+
+
+      if (status) {
+        status.textContent =
+          "Guest";
+      }
+
+
+      const loginButton =
+        $("loginButton");
+
+
+      if (loginButton) {
+
+        loginButton.textContent =
+          "👤 Login";
+
+      }
+
+    }
+
+  }
+);
+
+
+// =====================================================
+// PRODUCT CARD
+// =====================================================
+
+function productCard(id, p) {
 
   const name =
-    product.name ||
+    p.name ||
     "Product";
 
+
   const image =
-    product.photo ||
-    product.image ||
+    p.photo ||
+    p.image ||
     "https://via.placeholder.com/400x300?text=AIO+Digital+Mall";
+
 
   const price =
     Number(
-      product.price || 0
+      p.price || 0
     );
+
 
   const stock =
     Number(
-      product.stock === undefined
+      p.stock === undefined
         ? 1
-        : product.stock
+        : p.stock
     );
+
 
   return `
 
-    <article
-      class="product-card"
-    >
+    <article class="product-card">
 
       <img
         class="product-image"
         src="${escapeHTML(image)}"
         alt="${escapeHTML(name)}"
         loading="lazy"
+        onerror="this.src='https://via.placeholder.com/400x300?text=Product'"
       >
 
-      <div
-        class="product-info"
-      >
+      <div class="product-info">
 
         <h3>
           ${escapeHTML(name)}
         </h3>
 
-        <p>
-          ${escapeHTML(
-            product.description || ""
-          )}
-        </p>
+        ${
+          p.description
+            ? `
+              <p class="product-description">
+                ${escapeHTML(
+                  p.description
+                )}
+              </p>
+            `
+            : ""
+        }
 
-        <strong
-          class="product-price"
-        >
+        <div class="product-price">
           ${money(price)}
-        </strong>
+        </div>
 
         ${
           stock <= 0
 
-          ? `
-            <button
-              class="add-btn"
-              disabled
-            >
-              OUT OF STOCK
-            </button>
-          `
+            ? `
+              <button
+                class="add-btn"
+                disabled
+              >
+                OUT OF STOCK
+              </button>
+            `
 
-          : `
-            <button
-              class="add-btn"
-              onclick="addCart(
-                '${id}'
-              )"
-            >
-              ADD TO CART
-            </button>
-          `
+            : `
+              <button
+                class="add-btn"
+                data-add-product="${escapeHTML(id)}"
+              >
+                ADD TO CART
+              </button>
+            `
         }
 
       </div>
@@ -679,6 +639,7 @@ function productCard(
     </article>
 
   `;
+
 }
 
 
@@ -691,9 +652,14 @@ function loadProducts() {
   const container =
     $("productGrid");
 
-  if (!container) return;
+
+  if (!container) {
+    return;
+  }
+
 
   onSnapshot(
+
     collection(
       db,
       "products"
@@ -702,6 +668,7 @@ function loadProducts() {
     snapshot => {
 
       products = [];
+
 
       snapshot.forEach(
         item => {
@@ -714,25 +681,33 @@ function loadProducts() {
         }
       );
 
-      const local =
+
+      const localProducts =
         products.filter(
           p =>
-            p.type !==
-            "affiliate"
+            p.type !== "affiliate"
         );
 
-      if (!local.length) {
 
-        container.innerHTML =
-          `<div class="empty">
-             Abhi products available nahi hain.
-           </div>`;
+      if (!localProducts.length) {
+
+        container.innerHTML = `
+
+          <div class="empty">
+
+            Abhi products available
+            nahi hain.
+
+          </div>
+
+        `;
 
         return;
       }
 
+
       container.innerHTML =
-        local
+        localProducts
           .map(
             p =>
               productCard(
@@ -741,6 +716,7 @@ function loadProducts() {
               )
           )
           .join("");
+
     },
 
     error => {
@@ -750,17 +726,289 @@ function loadProducts() {
         error
       );
 
-      container.innerHTML =
-        `<div class="empty">
-           Products load nahi ho paaye.
-         </div>`;
+
+      container.innerHTML = `
+
+        <div class="empty">
+
+          Products load nahi ho paaye.
+
+          <br><br>
+
+          ${escapeHTML(
+            error.message
+          )}
+
+        </div>
+
+      `;
+
     }
+
   );
+
 }
 
 
 // =====================================================
-// CART
+// LOAD AFFILIATE PRODUCTS
+// =====================================================
+
+function loadAffiliateProducts() {
+
+  const container =
+    $("affiliateGrid");
+
+
+  if (!container) {
+    return;
+  }
+
+
+  onSnapshot(
+
+    collection(
+      db,
+      "products"
+    ),
+
+    snapshot => {
+
+      const affiliate =
+        snapshot.docs
+          .map(
+            d => ({
+              id: d.id,
+              ...d.data()
+            })
+          )
+          .filter(
+            p =>
+              p.type === "affiliate"
+          );
+
+
+      if (!affiliate.length) {
+
+        container.innerHTML = `
+
+          <div class="empty">
+
+            Amazon deals
+            available nahi hain.
+
+          </div>
+
+        `;
+
+        return;
+      }
+
+
+      container.innerHTML =
+        affiliate
+          .map(p => {
+
+            const image =
+              p.photo ||
+              p.image ||
+              "https://via.placeholder.com/400x300?text=Amazon";
+
+
+            return `
+
+              <article class="product-card">
+
+                <img
+                  class="product-image"
+                  src="${escapeHTML(image)}"
+                  alt="${escapeHTML(
+                    p.name ||
+                    "Amazon Product"
+                  )}"
+                  loading="lazy"
+                  onerror="this.src='https://via.placeholder.com/400x300?text=Amazon'"
+                >
+
+                <div class="product-info">
+
+                  <h3>
+                    ${escapeHTML(
+                      p.name ||
+                      "Amazon Product"
+                    )}
+                  </h3>
+
+                  <div class="product-price">
+                    ${money(p.price)}
+                  </div>
+
+                  <button
+                    class="add-btn"
+                    data-affiliate="${escapeHTML(
+                      p.link || ""
+                    )}"
+                  >
+                    BUY ON AMAZON
+                  </button>
+
+                </div>
+
+              </article>
+
+            `;
+
+          })
+          .join("");
+
+    },
+
+    error => {
+
+      console.error(
+        "Affiliate error:",
+        error
+      );
+
+
+      container.innerHTML = `
+
+        <div class="empty">
+
+          Deals load nahi ho paaye.
+
+        </div>
+
+      `;
+
+    }
+
+  );
+
+}
+
+
+// =====================================================
+// SEARCH
+// =====================================================
+
+function searchProducts() {
+
+  const input =
+    $("searchInput");
+
+
+  const container =
+    $("productGrid");
+
+
+  if (!input || !container) {
+    return;
+  }
+
+
+  const value =
+    input.value
+      .trim()
+      .toLowerCase();
+
+
+  if (!value) {
+
+    const localProducts =
+      products.filter(
+        p =>
+          p.type !== "affiliate"
+      );
+
+
+    container.innerHTML =
+      localProducts
+        .map(
+          p =>
+            productCard(
+              p.id,
+              p
+            )
+        )
+        .join("");
+
+    return;
+  }
+
+
+  const filtered =
+    products.filter(
+      p => {
+
+        if (
+          p.type ===
+          "affiliate"
+        ) {
+          return false;
+        }
+
+
+        const name =
+          String(
+            p.name || ""
+          ).toLowerCase();
+
+
+        const description =
+          String(
+            p.description || ""
+          ).toLowerCase();
+
+
+        const category =
+          String(
+            p.category || ""
+          ).toLowerCase();
+
+
+        return (
+          name.includes(value) ||
+          description.includes(value) ||
+          category.includes(value)
+        );
+
+      }
+    );
+
+
+  if (!filtered.length) {
+
+    container.innerHTML = `
+
+      <div class="empty">
+
+        Product nahi mila 🔎
+
+      </div>
+
+    `;
+
+    return;
+  }
+
+
+  container.innerHTML =
+    filtered
+      .map(
+        p =>
+          productCard(
+            p.id,
+            p
+          )
+      )
+      .join("");
+
+}
+
+
+// =====================================================
+// CART SAVE
 // =====================================================
 
 function saveCart() {
@@ -769,17 +1017,24 @@ function saveCart() {
     "aio_cart",
     JSON.stringify(cart)
   );
+
 }
 
 
-window.addCart =
-function(id) {
+// =====================================================
+// ADD CART
+// =====================================================
+
+function addCart(
+  id
+) {
 
   const product =
     products.find(
       p =>
         p.id === id
     );
+
 
   if (!product) {
 
@@ -790,15 +1045,26 @@ function(id) {
     return;
   }
 
+
+  const price =
+    Number(
+      product.price || 0
+    );
+
+
   const existing =
     cart.find(
       item =>
         item.id === id
     );
 
+
   if (existing) {
 
-    existing.quantity++;
+    existing.quantity =
+      Number(
+        existing.quantity || 1
+      ) + 1;
 
   } else {
 
@@ -810,74 +1076,90 @@ function(id) {
         product.name ||
         "Product",
 
-      price:
-        Number(
-          product.price || 0
-        ),
+      price,
 
       image:
         product.photo ||
         product.image ||
         "",
 
-      shopId:
-        product.shopId ||
-        "",
-
       quantity: 1
+
     });
+
   }
 
-  saveCart();
-
-  updateCartUI();
-
-  alert(
-    "Cart me add ho gaya ✅"
-  );
-};
-
-
-window.removeCart =
-function(index) {
-
-  cart.splice(
-    index,
-    1
-  );
 
   saveCart();
 
   updateCartUI();
-};
+
+  openCart();
+
+}
 
 
-window.changeCartQty =
-function(
+// =====================================================
+// CHANGE QUANTITY
+// =====================================================
+
+function changeCartQty(
   index,
   amount
 ) {
 
-  if (!cart[index]) return;
+  if (!cart[index]) {
+    return;
+  }
 
-  cart[index].quantity +=
-    amount;
+
+  cart[index].quantity =
+    Number(
+      cart[index].quantity || 1
+    ) + amount;
+
 
   if (
-    cart[index].quantity <=
-    0
+    cart[index].quantity <= 0
   ) {
 
     cart.splice(
       index,
       1
     );
+
   }
+
 
   saveCart();
 
   updateCartUI();
-};
+
+}
+
+
+// =====================================================
+// REMOVE CART
+// =====================================================
+
+function removeCart(index) {
+
+  if (!cart[index]) {
+    return;
+  }
+
+
+  cart.splice(
+    index,
+    1
+  );
+
+
+  saveCart();
+
+  updateCartUI();
+
+}
 
 
 // =====================================================
@@ -888,6 +1170,34 @@ function updateCartUI() {
 
   const count =
     $("cartCount");
+
+
+  const items =
+    $("cartItems");
+
+
+  const subtotalElement =
+    $("cartSubtotal");
+
+
+  const deliveryElement =
+    $("deliveryFee");
+
+
+  const totalElement =
+    $("cartTotal");
+
+
+  const itemCount =
+    cart.reduce(
+      (sum, item) =>
+        sum +
+        Number(
+          item.quantity || 1
+        ),
+      0
+    );
+
 
   const subtotal =
     cart.reduce(
@@ -902,270 +1212,299 @@ function updateCartUI() {
       0
     );
 
-  const itemCount =
-    cart.reduce(
-      (sum, item) =>
-        sum +
-        Number(
-          item.quantity || 1
-        ),
-      0
-    );
+
+  const delivery =
+    subtotal > 0
+      ? 0
+      : 0;
+
+
+  const total =
+    subtotal +
+    delivery;
+
 
   if (count) {
-
     count.textContent =
       itemCount;
   }
 
-  if ($("cartSubtotal")) {
 
-    $("cartSubtotal")
-      .textContent =
+  if (subtotalElement) {
+
+    subtotalElement.textContent =
       subtotal.toLocaleString(
         "en-IN"
       );
+
   }
 
-  if ($("deliveryFee")) {
 
-    $("deliveryFee")
-      .textContent =
-      "0";
-  }
+  if (deliveryElement) {
 
-  if ($("cartTotal")) {
-
-    $("cartTotal")
-      .textContent =
-      subtotal.toLocaleString(
+    deliveryElement.textContent =
+      delivery.toLocaleString(
         "en-IN"
       );
+
   }
 
-  const items =
-    $("cartItems");
 
-  if (!items) return;
+  if (totalElement) {
+
+    totalElement.textContent =
+      total.toLocaleString(
+        "en-IN"
+      );
+
+  }
+
+
+  if (!items) {
+    return;
+  }
+
 
   if (!cart.length) {
 
-    items.innerHTML =
-      `<div class="empty">
-         Your cart is empty.
-       </div>`;
+    items.innerHTML = `
+
+      <div class="empty">
+
+        Your cart is empty 🛒
+
+      </div>
+
+    `;
 
     return;
   }
 
+
   items.innerHTML =
-    cart.map(
-      (item, index) => `
+    cart
+      .map(
+        (item, index) => `
 
-        <div class="cart-item">
+          <div class="cart-item">
 
-          <img
-            class="cart-item-image"
-            src="${escapeHTML(
-              item.image || ""
-            )}"
-            alt=""
-          >
+            ${
+              item.image
+                ? `
+                  <img
+                    class="cart-item-image"
+                    src="${escapeHTML(
+                      item.image
+                    )}"
+                    alt=""
+                  >
+                `
+                : ""
+            }
 
-          <div
-            class="cart-item-info"
-          >
+            <div class="cart-item-info">
 
-            <div
-              class="cart-item-name"
-            >
-              ${escapeHTML(
-                item.name
-              )}
-            </div>
+              <div class="cart-item-name">
 
-            <div>
-              ${money(
-                item.price
-              )}
-            </div>
+                ${escapeHTML(
+                  item.name
+                )}
 
-            <div
-              class="quantity-row"
-            >
+              </div>
 
-              <button
-                class="quantity-btn"
-                onclick="changeCartQty(
-                  ${index},
-                  -1
-                )"
-              >
-                −
-              </button>
+              <div class="cart-item-price">
 
-              <span>
-                ${item.quantity}
-              </span>
+                ${money(
+                  item.price
+                )}
 
-              <button
-                class="quantity-btn"
-                onclick="changeCartQty(
-                  ${index},
-                  1
-                )"
-              >
-                +
-              </button>
+              </div>
 
-              <button
-                class="quantity-btn"
-                onclick="removeCart(
-                  ${index}
-                )"
-              >
-                🗑️
-              </button>
+              <div class="quantity-row">
+
+                <button
+                  class="quantity-btn"
+                  data-qty-index="${index}"
+                  data-qty-change="-1"
+                >
+                  −
+                </button>
+
+                <strong>
+                  ${item.quantity}
+                </strong>
+
+                <button
+                  class="quantity-btn"
+                  data-qty-index="${index}"
+                  data-qty-change="1"
+                >
+                  +
+                </button>
+
+                <button
+                  class="remove-item"
+                  data-remove-index="${index}"
+                >
+                  🗑️
+                </button>
+
+              </div>
 
             </div>
 
           </div>
 
-        </div>
-
-      `
-    ).join("");
-}
-
-
-// =====================================================
-// SEARCH
-// =====================================================
-
-function searchProducts() {
-
-  const input =
-    $("searchInput");
-
-  if (!input) return;
-
-  const value =
-    input.value
-      .trim()
-      .toLowerCase();
-
-  const container =
-    $("productGrid");
-
-  if (!container) return;
-
-  const result =
-    products
-      .filter(
-        p =>
-          p.type !==
-          "affiliate"
-      )
-      .filter(
-        p => {
-
-          const name =
-            String(
-              p.name || ""
-            )
-              .toLowerCase();
-
-          const category =
-            String(
-              p.category || ""
-            )
-              .toLowerCase();
-
-          return (
-            name.includes(value) ||
-            category.includes(value)
-          );
-        }
-      );
-
-  if (!result.length) {
-
-    container.innerHTML =
-      `<div class="empty">
-         Product nahi mila.
-       </div>`;
-
-    return;
-  }
-
-  container.innerHTML =
-    result
-      .map(
-        p =>
-          productCard(
-            p.id,
-            p
-          )
+        `
       )
       .join("");
+
 }
 
 
 // =====================================================
-// CART OPEN/CLOSE
+// CART OPEN
 // =====================================================
 
 function openCart() {
 
-  $("cartOverlay")
-    ?.classList.add(
+  const overlay =
+    $("cartOverlay");
+
+
+  if (overlay) {
+
+    overlay.classList.add(
       "active"
     );
+
+  }
+
 }
+
+
+// =====================================================
+// CART CLOSE
+// =====================================================
 
 function closeCart() {
 
-  $("cartOverlay")
-    ?.classList.remove(
+  const overlay =
+    $("cartOverlay");
+
+
+  if (overlay) {
+
+    overlay.classList.remove(
       "active"
     );
+
+  }
+
 }
 
 
 // =====================================================
-// CHECKOUT
+// LOGIN OPEN
 // =====================================================
 
-async function checkout() {
+function openLogin() {
 
-  if (!currentUser) {
+  const modal =
+    $("loginModal");
 
-    closeCart();
 
-    openLogin();
-
-    showStatus(
-      "Order karne ke liye login karo."
-    );
-
+  if (!modal) {
     return;
   }
+
+
+  modal.classList.add(
+    "active"
+  );
+
+
+  setTimeout(
+    setupRecaptcha,
+    100
+  );
+
+}
+
+
+// =====================================================
+// LOGIN CLOSE
+// =====================================================
+
+function closeLogin() {
+
+  const modal =
+    $("loginModal");
+
+
+  if (modal) {
+
+    modal.classList.remove(
+      "active"
+    );
+
+  }
+
+}
+
+
+// =====================================================
+// PLACE COD ORDER
+// =====================================================
+
+async function placeCODOrder() {
 
   if (!cart.length) {
 
     alert(
-      "Cart khali hai."
+      "Cart khali hai ❌"
     );
 
     return;
   }
 
-  const address =
+
+  const user =
+    auth.currentUser;
+
+
+  const phone =
+    user?.phoneNumber ||
     prompt(
-      "Complete delivery address daalo:"
+      "Mobile number daalo"
     );
 
-  if (!address) return;
+
+  if (!phone) {
+
+    alert(
+      "Mobile number required hai."
+    );
+
+    return;
+  }
+
+
+  const address =
+    prompt(
+      "Complete delivery address daalo"
+    );
+
+
+  if (!address) {
+
+    alert(
+      "Address required hai."
+    );
+
+    return;
+  }
+
 
   const total =
     cart.reduce(
@@ -1180,7 +1519,47 @@ async function checkout() {
       0
     );
 
+
+  const deliveryOTP =
+    String(
+      Math.floor(
+        1000 +
+        Math.random() *
+        9000
+      )
+    );
+
+
   try {
+
+    const order = {
+
+      userId:
+        user?.uid ||
+        null,
+
+      phone,
+
+      address,
+
+      items:
+        cart,
+
+      total,
+
+      paymentMethod:
+        "COD",
+
+      status:
+        "NEW",
+
+      deliveryOTP,
+
+      createdAt:
+        serverTimestamp()
+
+    };
+
 
     const orderRef =
       await addDoc(
@@ -1188,38 +1567,12 @@ async function checkout() {
           db,
           "orders"
         ),
-        {
-
-          customerId:
-            currentUser.uid,
-
-          customerEmail:
-            currentUser.email ||
-            "",
-
-          customerName:
-            currentUser.displayName ||
-            "Customer",
-
-          address,
-
-          items:
-            cart,
-
-          total,
-
-          paymentMethod:
-            "COD",
-
-          status:
-            "NEW",
-
-          createdAt:
-            serverTimestamp()
-        }
+        order
       );
 
+
     cart = [];
+
 
     saveCart();
 
@@ -1227,11 +1580,22 @@ async function checkout() {
 
     closeCart();
 
+
     alert(
-      "Order successfully place ho gaya ✅\n\n" +
-      "Order ID: " +
-      orderRef.id
+
+      "Order Successfully " +
+      "Place Ho Gaya ✅\n\n" +
+
+      "Payment: CASH ON DELIVERY\n\n" +
+
+      "Order ID:\n" +
+      orderRef.id +
+
+      "\n\nDelivery OTP:\n" +
+      deliveryOTP
+
     );
+
 
   } catch (error) {
 
@@ -1240,143 +1604,421 @@ async function checkout() {
       error
     );
 
+
     alert(
-      "Order place nahi hua ❌\n" +
+
+      "Order place nahi hua ❌\n\n" +
       error.message
+
     );
+
   }
+
 }
 
 
 // =====================================================
-// EVENT LISTENERS
+// AFFILIATE CLICK
+// =====================================================
+
+function openAffiliate(url) {
+
+  if (!url) {
+
+    alert(
+      "Product link available nahi hai."
+    );
+
+    return;
+  }
+
+
+  window.open(
+    url,
+    "_blank",
+    "noopener,noreferrer"
+  );
+
+}
+
+
+// =====================================================
+// CATEGORY CLICK
+// =====================================================
+
+function filterCategory(
+  category
+) {
+
+  const input =
+    $("searchInput");
+
+
+  if (input) {
+
+    input.value =
+      category;
+
+  }
+
+
+  searchProducts();
+
+
+  window.scrollTo({
+
+    top:
+      document.querySelector(
+        ".section:nth-of-type(4)"
+      )?.offsetTop || 0,
+
+    behavior:
+      "smooth"
+
+  });
+
+}
+
+
+// =====================================================
+// EVENT DELEGATION
+// =====================================================
+
+document.addEventListener(
+  "click",
+  event => {
+
+    const addButton =
+      event.target.closest(
+        "[data-add-product]"
+      );
+
+
+    if (addButton) {
+
+      addCart(
+        addButton.dataset
+          .addProduct
+      );
+
+      return;
+    }
+
+
+    const affiliateButton =
+      event.target.closest(
+        "[data-affiliate]"
+      );
+
+
+    if (affiliateButton) {
+
+      openAffiliate(
+        affiliateButton.dataset
+          .affiliate
+      );
+
+      return;
+    }
+
+
+    const qtyButton =
+      event.target.closest(
+        "[data-qty-index]"
+      );
+
+
+    if (qtyButton) {
+
+      changeCartQty(
+
+        Number(
+          qtyButton.dataset
+            .qtyIndex
+        ),
+
+        Number(
+          qtyButton.dataset
+            .qtyChange
+        )
+
+      );
+
+      return;
+    }
+
+
+    const removeButton =
+      event.target.closest(
+        "[data-remove-index]"
+      );
+
+
+    if (removeButton) {
+
+      removeCart(
+        Number(
+          removeButton.dataset
+            .removeIndex
+        )
+      );
+
+      return;
+    }
+
+
+    const category =
+      event.target.closest(
+        ".category-card"
+      );
+
+
+    if (category) {
+
+      const text =
+        category
+          .querySelector(
+            "span"
+          )
+          ?.textContent
+          ?.trim();
+
+
+      if (text) {
+
+        filterCategory(
+          text
+        );
+
+      }
+
+    }
+
+  }
+);
+
+
+// =====================================================
+// DOM READY
 // =====================================================
 
 document.addEventListener(
   "DOMContentLoaded",
   () => {
 
-    createEmailLoginUI();
+
+    // Initial cart
 
     updateCartUI();
 
-    loadProducts();
+
+    // Search
+
+    const searchInput =
+      $("searchInput");
 
 
-    $("loginButton")
-      ?.addEventListener(
-        "click",
-        openLogin
-      );
+    if (searchInput) {
 
-
-    $("closeLoginButton")
-      ?.addEventListener(
-        "click",
-        closeLogin
-      );
-
-
-    $("googleLoginButton")
-      ?.addEventListener(
-        "click",
-        googleLogin
-      );
-
-
-    $("cartButton")
-      ?.addEventListener(
-        "click",
-        openCart
-      );
-
-
-    $("closeCartButton")
-      ?.addEventListener(
-        "click",
-        closeCart
-      );
-
-
-    $("checkoutButton")
-      ?.addEventListener(
-        "click",
-        checkout
-      );
-
-
-    $("searchInput")
-      ?.addEventListener(
+      searchInput.addEventListener(
         "input",
         searchProducts
       );
 
+    }
 
-    $("cartOverlay")
-      ?.addEventListener(
+
+    // Cart button
+
+    const cartButton =
+      $("cartButton");
+
+
+    if (cartButton) {
+
+      cartButton.addEventListener(
+        "click",
+        openCart
+      );
+
+    }
+
+
+    // Close cart
+
+    const closeCartButton =
+      $("closeCartButton");
+
+
+    if (closeCartButton) {
+
+      closeCartButton.addEventListener(
+        "click",
+        closeCart
+      );
+
+    }
+
+
+    // Overlay click
+
+    const cartOverlay =
+      $("cartOverlay");
+
+
+    if (cartOverlay) {
+
+      cartOverlay.addEventListener(
         "click",
         event => {
 
           if (
             event.target ===
-            $("cartOverlay")
+            cartOverlay
           ) {
 
             closeCart();
+
           }
+
         }
       );
 
+    }
 
-    $("exploreButton")
-      ?.addEventListener(
+
+    // Login button
+
+    const loginButton =
+      $("loginButton");
+
+
+    if (loginButton) {
+
+      loginButton.addEventListener(
+        "click",
+        openLogin
+      );
+
+    }
+
+
+    // Close login
+
+    const closeLoginButton =
+      $("closeLoginButton");
+
+
+    if (closeLoginButton) {
+
+      closeLoginButton.addEventListener(
+        "click",
+        closeLogin
+      );
+
+    }
+
+
+    // Send OTP
+
+    const sendOtpButton =
+      $("sendOtpButton");
+
+
+    if (sendOtpButton) {
+
+      sendOtpButton.addEventListener(
+        "click",
+        sendOTP
+      );
+
+    }
+
+
+    // Verify OTP
+
+    const verifyOtpButton =
+      $("verifyOtpButton");
+
+
+    if (verifyOtpButton) {
+
+      verifyOtpButton.addEventListener(
+        "click",
+        verifyOTP
+      );
+
+    }
+
+
+    // Google
+
+    const googleLoginButton =
+      $("googleLoginButton");
+
+
+    if (googleLoginButton) {
+
+      googleLoginButton.addEventListener(
+        "click",
+        googleLogin
+      );
+
+    }
+
+
+    // Checkout
+
+    const checkoutButton =
+      $("checkoutButton");
+
+
+    if (checkoutButton) {
+
+      checkoutButton.addEventListener(
+        "click",
+        placeCODOrder
+      );
+
+    }
+
+
+    // Explore
+
+    const exploreButton =
+      $("exploreButton");
+
+
+    if (exploreButton) {
+
+      exploreButton.addEventListener(
         "click",
         () => {
 
           document
-            .getElementById(
-              "productGrid"
+            .querySelector(
+              ".section"
             )
             ?.scrollIntoView({
-              behavior: "smooth"
+              behavior:
+                "smooth"
             });
 
         }
       );
 
-
-    $("profileNavButton")
-      ?.addEventListener(
-        "click",
-        openLogin
-      );
+    }
 
 
-    $("ordersNavButton")
-      ?.addEventListener(
-        "click",
-        () => {
+    // Home
 
-          if (!currentUser) {
-
-            openLogin();
-
-            showStatus(
-              "Orders dekhne ke liye login karo."
-            );
-
-            return;
-          }
-
-          alert(
-            "My Orders section connected hai."
-          );
-        }
-      );
+    const homeButton =
+      $("homeNavButton");
 
 
-    $("homeNavButton")
-      ?.addEventListener(
+    if (homeButton) {
+
+      homeButton.addEventListener(
         "click",
         () => {
 
@@ -1388,85 +2030,103 @@ document.addEventListener(
         }
       );
 
+    }
 
-    $("searchNavButton")
-      ?.addEventListener(
+
+    // Search bottom nav
+
+    const searchNav =
+      $("searchNavButton");
+
+
+    if (searchNav) {
+
+      searchNav.addEventListener(
         "click",
         () => {
 
-          $("searchInput")
-            ?.focus();
+          searchInput?.focus();
 
         }
       );
 
+    }
 
-    $("locationButton")
-      ?.addEventListener(
+
+    // Profile
+
+    const profileNav =
+      $("profileNavButton");
+
+
+    if (profileNav) {
+
+      profileNav.addEventListener(
         "click",
-        () => {
-
-          alert(
-            "Location selection next step me connect ki jayegi."
-          );
-
-        }
+        openLogin
       );
+
+    }
+
+
+    // Load Firebase data
+
+    loadProducts();
+
+    loadAffiliateProducts();
 
   }
 );
 
 
 // =====================================================
-// SERVICE WORKER
+// GLOBAL COMPATIBILITY
 // =====================================================
 
-if (
-  "serviceWorker" in navigator
-) {
+window.addCart =
+  addCart;
 
-  window.addEventListener(
-    "load",
-    () => {
+window.removeCart =
+  removeCart;
 
-      navigator.serviceWorker
-        .register(
-          "./sw.js"
-        )
-        .catch(
-          error =>
-            console.error(
-              "Service Worker error:",
-              error
-            )
-        );
-
-    }
-  );
-}
-
-
-// =====================================================
-// GLOBAL FUNCTIONS
-// =====================================================
-
-window.googleLogin =
-  googleLogin;
-
-window.loginWithEmail =
-  loginWithEmail;
-
-window.signupWithEmail =
-  signupWithEmail;
-
-window.logout =
-  logout;
+window.changeCartQty =
+  changeCartQty;
 
 window.updateCartUI =
   updateCartUI;
 
+window.openCart =
+  openCart;
+
+window.closeCart =
+  closeCart;
+
+window.openLogin =
+  openLogin;
+
+window.closeLogin =
+  closeLogin;
+
+window.sendOTP =
+  sendOTP;
+
+window.verifyOTP =
+  verifyOTP;
+
+window.googleLogin =
+  googleLogin;
+
+window.logout =
+  logout;
+
+window.placeCODOrder =
+  placeCODOrder;
+
+window.placeOrder =
+  placeCODOrder;
+
+window.openAffiliate =
+  openAffiliate;
+
 window.searchProducts =
   searchProducts;
-
-window.checkout =
-  checkout;
