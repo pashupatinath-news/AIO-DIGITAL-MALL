@@ -1,7 +1,5 @@
-
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
 
   <meta charset="UTF-8">
@@ -18,7 +16,7 @@
 
   <meta
     name="description"
-    content="AIO Digital Mall"
+    content="AIO DIGITAL MALL - Customer Website and App"
   >
 
   <link
@@ -32,28 +30,29 @@
 
     * {
       box-sizing: border-box;
-      margin: 0;
-      padding: 0;
     }
 
     body {
-      font-family:
-        Arial,
-        sans-serif;
-      background: #fff8f0;
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f7f7f7;
       color: #222;
     }
 
-    header {
-      background: #ff6600;
-      color: white;
-      padding: 14px;
-      position: sticky;
-      top: 0;
-      z-index: 100;
+    button {
+      cursor: pointer;
     }
 
     .topbar {
+      background: #ff6600;
+      color: white;
+      padding: 12px 16px;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+
+    .topbar-inner {
       max-width: 1200px;
       margin: auto;
       display: flex;
@@ -64,223 +63,224 @@
 
     .logo {
       font-size: 20px;
-      font-weight: 800;
+      font-weight: bold;
     }
 
-    button {
-      cursor: pointer;
+    .top-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
     }
 
-    .header-btn {
+    .top-actions button {
       border: 0;
       background: white;
       color: #ff6600;
       padding: 9px 13px;
-      border-radius: 20px;
+      border-radius: 8px;
       font-weight: bold;
     }
 
-    main {
-      max-width: 1200px;
-      margin: auto;
-      padding: 15px;
-    }
-
     .hero {
-      margin-top: 10px;
-      min-height: 180px;
+      max-width: 1200px;
+      margin: 20px auto;
+      padding: 25px 16px;
       border-radius: 18px;
-      background:
-        linear-gradient(
-          135deg,
-          #ff6600,
-          #ff9d42
-        );
+      background: linear-gradient(
+        135deg,
+        #ff6600,
+        #ff9d00
+      );
       color: white;
-      padding: 28px;
-      display: flex;
-      align-items: center;
     }
 
     .hero h1 {
-      font-size: 30px;
-      margin-bottom: 8px;
+      margin-top: 0;
+      font-size: 32px;
     }
 
     .search-box {
-      margin: 15px 0;
-      display: flex;
-      gap: 8px;
+      max-width: 1200px;
+      margin: 15px auto;
+      padding: 0 16px;
     }
 
     .search-box input {
       width: 100%;
-      padding: 14px;
+      padding: 15px;
       border: 1px solid #ddd;
       border-radius: 12px;
       font-size: 16px;
     }
 
     .section {
-      margin-top: 25px;
+      max-width: 1200px;
+      margin: 25px auto;
+      padding: 0 16px;
     }
 
     .section h2 {
-      margin-bottom: 12px;
+      margin-bottom: 15px;
     }
 
     .categories {
-      display: grid;
-      grid-template-columns:
-        repeat(auto-fit, minmax(120px, 1fr));
+      display: flex;
       gap: 10px;
+      overflow-x: auto;
+      padding-bottom: 5px;
     }
 
-    .category {
+    .categories button {
+      white-space: nowrap;
+      border: 0;
+      padding: 12px 16px;
+      border-radius: 25px;
       background: white;
-      border-radius: 14px;
-      padding: 16px 8px;
-      text-align: center;
-      box-shadow:
-        0 2px 8px
-        rgba(0,0,0,.08);
-      font-weight: bold;
+      box-shadow: 0 2px 8px rgba(0,0,0,.08);
     }
 
-    .products {
+    .shop-grid,
+    .product-grid {
       display: grid;
       grid-template-columns:
-        repeat(auto-fill, minmax(190px, 1fr));
+        repeat(auto-fill, minmax(170px, 1fr));
       gap: 15px;
     }
 
+    .shop-card,
     .product-card {
       background: white;
-      border-radius: 15px;
-      overflow: hidden;
-      box-shadow:
-        0 3px 12px
-        rgba(0,0,0,.08);
+      border-radius: 14px;
+      padding: 12px;
+      box-shadow: 0 3px 12px rgba(0,0,0,.08);
     }
 
+    .shop-card {
+      cursor: pointer;
+    }
+
+    .shop-card img,
     .product-card img {
       width: 100%;
-      height: 180px;
+      height: 160px;
       object-fit: cover;
-      background: #eee;
+      border-radius: 10px;
     }
 
-    .product-info {
-      padding: 12px;
-    }
-
-    .product-info h3 {
+    .shop-card h3,
+    .product-card h3 {
+      margin: 9px 0 5px;
       font-size: 17px;
-      margin-bottom: 7px;
     }
 
-    .product-info p {
-      color: #666;
-      font-size: 13px;
-      min-height: 18px;
-      margin-bottom: 8px;
+    .product-card .price {
+      font-weight: bold;
+      color: #ff6600;
+      font-size: 18px;
     }
 
-    .product-info strong {
-      display: block;
-      font-size: 19px;
-      margin-bottom: 10px;
-    }
-
-    .btn {
+    .product-card button {
       width: 100%;
       border: 0;
       padding: 11px;
+      border-radius: 9px;
       background: #ff6600;
       color: white;
-      border-radius: 9px;
       font-weight: bold;
     }
 
-    .btn:disabled {
+    .product-card button:disabled {
       background: #aaa;
-      cursor: not-allowed;
     }
 
-    .login-box,
     .cart-box {
+      max-width: 600px;
+      margin: 25px auto;
       background: white;
-      padding: 18px;
-      margin-top: 20px;
-      border-radius: 15px;
-      box-shadow:
-        0 2px 10px
-        rgba(0,0,0,.08);
-    }
-
-    .login-box input {
-      width: 100%;
-      padding: 12px;
-      margin: 7px 0;
-      border: 1px solid #ddd;
-      border-radius: 9px;
-    }
-
-    .timer {
-      text-align: center;
-      background: #222;
-      color: #ffd166;
-      padding: 12px;
-      border-radius: 10px;
-      margin-top: 15px;
-      font-weight: bold;
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: 0 5px 20px rgba(0,0,0,.1);
     }
 
     .cart-item {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
       padding: 12px 0;
       border-bottom: 1px solid #eee;
     }
 
-    .cart-controls {
-      display: flex;
-      align-items: center;
-      gap: 7px;
+    .cart-item img {
+      width: 65px;
+      height: 65px;
+      object-fit: cover;
+      border-radius: 8px;
     }
 
-    .cart-controls button {
+    .cart-item > div {
+      flex: 1;
+    }
+
+    .cart-item button {
       border: 0;
+      padding: 6px 9px;
+      border-radius: 6px;
+      margin: 2px;
+    }
+
+    .order-card {
+      background: white;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.08);
+    }
+
+    .cart-button {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      z-index: 5000;
+      border: 0;
+      border-radius: 50px;
+      padding: 15px 20px;
       background: #ff6600;
       color: white;
-      width: 30px;
-      height: 30px;
-      border-radius: 7px;
+      font-weight: bold;
+      box-shadow: 0 5px 20px rgba(0,0,0,.25);
     }
 
     footer {
       margin-top: 40px;
-      padding: 25px;
+      padding: 30px 16px;
       text-align: center;
       background: #222;
       color: white;
     }
 
-    @media (max-width: 600px) {
+    @media(max-width:600px) {
 
       .hero h1 {
-        font-size: 23px;
+        font-size: 25px;
       }
 
-      .products {
+      .shop-grid,
+      .product-grid {
         grid-template-columns:
-          repeat(2, 1fr);
+          repeat(2, minmax(0, 1fr));
       }
 
+      .shop-card img,
       .product-card img {
-        height: 140px;
+        height: 130px;
+      }
+
+      .topbar-inner {
+        align-items: flex-start;
+      }
+
+      .logo {
+        font-size: 16px;
       }
 
     }
@@ -291,210 +291,313 @@
 
 <body>
 
-<header>
+  <header class="topbar">
 
-  <div class="topbar">
+    <div class="topbar-inner">
 
-    <div class="logo">
-      🚩 AIO DIGITAL MALL
+      <div class="logo">
+        🚩 AIO DIGITAL MALL
+      </div>
+
+      <div class="top-actions">
+
+        <button
+          id="loginButton"
+          onclick="openLogin()"
+        >
+          LOGIN
+        </button>
+
+        <button
+          id="accountButton"
+          onclick="document.getElementById('accountSection').scrollIntoView({behavior:'smooth'})"
+          style="display:none;"
+        >
+          ACCOUNT
+        </button>
+
+      </div>
+
     </div>
 
-    <div>
+  </header>
 
-      <button
-        class="header-btn"
-        onclick="toggleCart()"
-      >
-        🛒 CART
-        (<span id="cartCount">0</span>)
-      </button>
 
-    </div>
+  <main>
 
-  </div>
-
-</header>
-
-<main>
-
-  <section class="hero">
-
-    <div>
+    <section class="hero">
 
       <h1>
         AIO DIGITAL MALL
       </h1>
 
       <p>
-        Local Shops • Products • Food • Grocery • COD
+        Local Shops • Products • Food • Grocery • Fashion
       </p>
+
+      <p>
+        Fast Shopping + Cash on Delivery
+      </p>
+
+    </section>
+
+
+    <div class="search-box">
+
+      <input
+        id="searchInput"
+        type="search"
+        placeholder="Search products..."
+        oninput="searchProducts()"
+      >
 
     </div>
 
-  </section>
 
-  <div class="timer">
+    <section class="section">
 
-    FLASH SALE ENDS IN:
-    <span id="timer">
-      02:59:59
-    </span>
+      <h2>
+        🛍️ Categories
+      </h2>
 
-  </div>
+      <div class="categories">
 
-  <section class="login-box">
+        <button onclick="filterCategory('Grocery')">
+          Grocery
+        </button>
 
-    <h2>
-      📱 Mobile OTP Login
-    </h2>
+        <button onclick="filterCategory('Hotel & Food')">
+          Hotel & Food
+        </button>
 
-    <input
-      id="phone"
-      type="tel"
-      placeholder="+919876543210"
+        <button onclick="filterCategory('Fashion')">
+          Fashion
+        </button>
+
+        <button onclick="filterCategory('Electronics')">
+          Electronics
+        </button>
+
+        <button onclick="filterCategory('Education')">
+          Education
+        </button>
+
+        <button onclick="filterCategory('Jewellery')">
+          Jewellery
+        </button>
+
+        <button onclick="filterCategory('Property')">
+          Property
+        </button>
+
+        <button onclick="filterCategory('Mobile & AC')">
+          Mobile & AC
+        </button>
+
+      </div>
+
+    </section>
+
+
+    <section class="section">
+
+      <h2>
+        🏪 Local Shops
+      </h2>
+
+      <div
+        id="shopList"
+        class="shop-grid"
+      >
+        <p>
+          Shops loading...
+        </p>
+      </div>
+
+    </section>
+
+
+    <section class="section">
+
+      <h2 id="shopTitle">
+        🔥 All Products
+      </h2>
+
+      <div
+        id="productList"
+        class="product-grid"
+      >
+        <p>
+          Products loading...
+        </p>
+      </div>
+
+    </section>
+
+
+    <section class="section">
+
+      <h2>
+        ⭐ Featured Products
+      </h2>
+
+      <div
+        id="featuredProducts"
+        class="product-grid"
+      ></div>
+
+    </section>
+
+
+    <section
+      id="accountSection"
+      class="section"
     >
 
-    <div id="recaptcha"></div>
+      <h2>
+        👤 My Account
+      </h2>
 
-    <button
-      class="btn"
-      onclick="sendOTP()"
-    >
-      OTP BHEJO
-    </button>
+      <div class="order-card">
 
-    <input
-      id="otp"
-      type="text"
-      inputmode="numeric"
-      maxlength="6"
-      placeholder="OTP"
+        <p>
+          Customer:
+          <strong id="customerName">
+            Guest
+          </strong>
+        </p>
+
+        <button
+          onclick="logoutCustomer()"
+          style="
+            background:#222;
+            color:white;
+            border:0;
+            padding:10px 15px;
+            border-radius:8px;
+          "
+        >
+          LOGOUT
+        </button>
+
+      </div>
+
+    </section>
+
+
+    <section class="section">
+
+      <h2>
+        📦 My Orders
+      </h2>
+
+      <div id="myOrders">
+
+        <p>
+          Login karke orders dekho.
+        </p>
+
+      </div>
+
+    </section>
+
+
+    <section
+      id="cartBox"
+      class="cart-box"
+      style="display:none;"
     >
 
-    <button
-      class="btn"
-      onclick="verifyOTP()"
-    >
-      VERIFY
-    </button>
+      <h2>
+        🛒 Your Cart
+      </h2>
 
-    <p
-      id="loginStatus"
-      style="margin-top:10px"
-    >
-      Guest
+      <div id="cartItems">
+        Cart khali hai 🛒
+      </div>
+
+      <hr>
+
+      <h3>
+        Total:
+        ₹<span id="cartTotal">0</span>
+      </h3>
+
+      <button
+        onclick="placeCODOrder()"
+        style="
+          width:100%;
+          padding:14px;
+          border:0;
+          border-radius:10px;
+          background:#ff6600;
+          color:white;
+          font-weight:bold;
+        "
+      >
+        📦 PLACE COD ORDER
+      </button>
+
+    </section>
+
+  </main>
+
+
+  <button
+    class="cart-button"
+    onclick="toggleCart()"
+  >
+    🛒 CART
+    (<span id="cartCount">0</span>)
+  </button>
+
+
+  <footer>
+
+    <strong>
+      🚩 AIO DIGITAL MALL
+    </strong>
+
+    <p>
+      Customer Website + App
     </p>
 
-  </section>
+    <p>
+      Local Shops • Products • COD
+    </p>
 
-  <section class="search-box">
+  </footer>
 
-    <input
-      id="search"
-      type="search"
-      placeholder="Search products..."
-      oninput="searchProducts()"
-    >
 
-  </section>
+  <script
+    type="module"
+    src="./app.js"
+  ></script>
 
-  <section class="section">
 
-    <h2>
-      🛍️ Categories
-    </h2>
+  <script>
 
-    <div class="categories">
+    if ("serviceWorker" in navigator) {
 
-      <div class="category">🍽️ Hotel & Food</div>
-      <div class="category">🛒 Grocery</div>
-      <div class="category">👕 Fashion</div>
-      <div class="category">📚 Education</div>
-      <div class="category">💎 Jewellery</div>
-      <div class="category">🏠 Property</div>
-      <div class="category">📱 Mobile & AC</div>
-      <div class="category">🛍️ Amazon</div>
+      window.addEventListener(
+        "load",
+        () => {
 
-    </div>
+          navigator.serviceWorker
+            .register("./sw.js")
+            .catch(error =>
+              console.error(
+                "Service Worker:",
+                error
+              )
+            );
 
-  </section>
+        }
+      );
 
-  <section class="section">
+    }
 
-    <h2>
-      🔥 LOCAL PRODUCTS
-    </h2>
-
-    <div
-      id="localProducts"
-      class="products"
-    >
-      <p>
-        Firebase se products load ho rahe hain...
-      </p>
-    </div>
-
-  </section>
-
-  <section class="section">
-
-    <h2>
-      🛒 AMAZON DEALS
-    </h2>
-
-    <div
-      id="affiliateProducts"
-      class="products"
-    >
-      <p>
-        Deals load ho rahe hain...
-      </p>
-    </div>
-
-  </section>
-
-  <section
-    id="cartBox"
-    class="cart-box"
-  >
-
-    <h2>
-      🛒 Your Cart
-    </h2>
-
-    <div id="cartItems">
-      <p>Cart khali hai.</p>
-    </div>
-
-    <h3 style="margin:15px 0">
-
-      Total:
-      ₹<span id="cartTotal">0</span>
-
-    </h3>
-
-    <button
-      class="btn"
-      onclick="placeCODOrder()"
-    >
-      📦 ORDER KARO - COD
-    </button>
-
-  </section>
-
-</main>
-
-<footer>
-
-  © 2026 AIO DIGITAL MALL
-
-</footer>
-
-<script
-  type="module"
-  src="./app.js"
-></script>
+  </script>
 
 </body>
-
 </html>
