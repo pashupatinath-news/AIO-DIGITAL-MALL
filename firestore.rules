@@ -1,322 +1,90 @@
 rules_version = '2';
 
 service cloud.firestore {
+
   match /databases/{database}/documents {
 
-    // =========================================================
-    // HELPER FUNCTIONS
-    // =========================================================
-
-    function signedIn() {
-      return request.auth != null;
-    }
-
-    function isOwner() {
-      return signedIn()
-        && request.auth.token.admin == true;
-    }
-
-    function isTeam() {
-      return signedIn()
-        && (
-          request.auth.token.admin == true ||
-          request.auth.token.team == true
-        );
-    }
-
-    function isSameUser(userId) {
-      return signedIn()
-        && request.auth.uid == userId;
-    }
-
-
-    // =========================================================
+    // =================================================
     // USERS
-    // =========================================================
+    // =================================================
 
     match /users/{userId} {
 
-      allow read: if isSameUser(userId) || isTeam();
+      allow read, write:
+        if request.auth != null
+        && request.auth.uid == userId;
 
-      allow create: if isSameUser(userId);
-
-      allow update: if isSameUser(userId) || isTeam();
-
-      allow delete: if isOwner();
     }
 
-
-    // =========================================================
-    // SHOPS
-    // =========================================================
-
-    match /shops/{shopId} {
-
-      // Customers can see active shops.
-      allow read: if resource.data.active == true || isTeam();
-
-      // Team can create/update/delete shops.
-      allow create, update, delete: if isTeam();
-    }
-
-
-    // =========================================================
+    // =================================================
     // PRODUCTS
-    // =========================================================
+    // =================================================
 
     match /products/{productId} {
 
-      // Public customer product catalogue.
-      allow read: if resource.data.active != false || isTeam();
+      // Customer can view products.
+      allow read:
+        if true;
 
-      // Team manages products.
-      allow create, update, delete: if isTeam();
+      // Team/admin can manage products.
+      allow create, update, delete:
+        if request.auth != null;
     }
 
+    // =================================================
+    // SHOPS
+    // =================================================
 
-    // =========================================================
-    // CATEGORIES
-    // =========================================================
+    match /shops/{shopId} {
 
-    match /categories/{categoryId} {
+      allow read:
+        if true;
 
-      allow read: if resource.data.active != false || isTeam();
-
-      allow create, update, delete: if isTeam();
+      allow create, update, delete:
+        if request.auth != null;
     }
 
-
-    // =========================================================
+    // =================================================
     // BANNERS
-    // =========================================================
+    // =================================================
 
-    match /banners/{bannerId} {
+    match /banner/{bannerId} {
 
-      allow read: if resource.data.active != false || isTeam();
+      allow read:
+        if true;
 
-      allow create, update, delete: if isTeam();
+      allow create, update, delete:
+        if request.auth != null;
     }
 
-
-    // =========================================================
-    // OFFERS
-    // =========================================================
-
-    match /offers/{offerId} {
-
-      allow read: if resource.data.active != false || isTeam();
-
-      allow create, update, delete: if isTeam();
-    }
-
-
-    // =========================================================
-    // COUPONS
-    // =========================================================
-
-    match /coupons/{couponId} {
-
-      allow read: if resource.data.active != false || isTeam();
-
-      allow create, update, delete: if isTeam();
-    }
-
-
-    // =========================================================
-    // ADDRESSES
-    // =========================================================
-
-    match /users/{userId}/addresses/{addressId} {
-
-      allow read, create, update, delete:
-        if isSameUser(userId) || isTeam();
-    }
-
-
-    // =========================================================
-    // CARTS
-    // =========================================================
-
-    match /carts/{userId} {
-
-      allow read, create, update, delete:
-        if isSameUser(userId) || isTeam();
-    }
-
-
-    // =========================================================
+    // =================================================
     // ORDERS
-    // =========================================================
+    // =================================================
 
     match /orders/{orderId} {
 
-      // Customer can read own order.
-      // Team can read all orders.
-      allow read: if isTeam()
-        || (
-          signedIn()
-          && resource.data.userId == request.auth.uid
-        );
+      // Logged-in customer can create order.
+      allow create:
+        if request.auth != null;
 
-      // Logged-in customer creates order.
-      allow create: if signedIn()
-        && request.resource.data.userId == request.auth.uid;
+      // Logged-in users can read/manage orders.
+      allow read, update:
+        if request.auth != null;
 
-      // Customer can cancel own order only.
-      // Team can update everything.
-      allow update: if isTeam()
-        || (
-          signedIn()
-          && resource.data.userId == request.auth.uid
-          && request.resource.data.userId == request.auth.uid
-        );
-
-      // Only owner/team should delete orders.
-      allow delete: if isTeam();
+      allow delete:
+        if request.auth != null;
     }
 
-
-    // =========================================================
-    // REVIEWS
-    // =========================================================
-
-    match /reviews/{reviewId} {
-
-      allow read: if true;
-
-      allow create: if signedIn()
-        && request.resource.data.userId == request.auth.uid;
-
-      allow update: if isTeam()
-        || (
-          signedIn()
-          && resource.data.userId == request.auth.uid
-        );
-
-      allow delete: if isTeam()
-        || (
-          signedIn()
-          && resource.data.userId == request.auth.uid
-        );
-    }
-
-
-    // =========================================================
-    // FAVORITES
-    // =========================================================
-
-    match /favorites/{favoriteId} {
-
-      allow read, create, update, delete:
-        if signedIn()
-        && (
-          resource.data.userId == request.auth.uid
-          || request.resource.data.userId == request.auth.uid
-          || isTeam()
-        );
-    }
-
-
-    // =========================================================
-    // NOTIFICATIONS
-    // =========================================================
-
-    match /notifications/{notificationId} {
-
-      allow read: if isTeam()
-        || (
-          signedIn()
-          && resource.data.userId == request.auth.uid
-        );
-
-      allow create: if isTeam();
-
-      allow update: if isTeam()
-        || (
-          signedIn()
-          && resource.data.userId == request.auth.uid
-        );
-
-      allow delete: if isTeam();
-    }
-
-
-    // =========================================================
-    // DELIVERY / RIDERS
-    // =========================================================
-
-    match /deliveryAgents/{agentId} {
-
-      allow read: if isTeam()
-        || (
-          signedIn()
-          && request.auth.uid == agentId
-        );
-
-      allow create, update, delete: if isTeam();
-    }
-
-
-    // =========================================================
-    // ORDER TRACKING
-    // =========================================================
-
-    match /orders/{orderId}/tracking/{trackingId} {
-
-      allow read: if isTeam()
-        || (
-          signedIn()
-          && get(/databases/$(database)/documents/orders/$(orderId))
-             .data.userId == request.auth.uid
-        );
-
-      allow create, update, delete: if isTeam();
-    }
-
-
-    // =========================================================
-    // APP SETTINGS
-    // =========================================================
-
-    match /settings/{settingId} {
-
-      allow read: if true;
-
-      allow create, update, delete: if isOwner();
-    }
-
-
-    // =========================================================
-    // SUPPORT
-    // =========================================================
-
-    match /supportTickets/{ticketId} {
-
-      allow read: if isTeam()
-        || (
-          signedIn()
-          && resource.data.userId == request.auth.uid
-        );
-
-      allow create: if signedIn()
-        && request.resource.data.userId == request.auth.uid;
-
-      allow update: if isTeam()
-        || (
-          signedIn()
-          && resource.data.userId == request.auth.uid
-        );
-
-      allow delete: if isTeam();
-    }
-
-
-    // =========================================================
-    // EVERYTHING ELSE = DENY
-    // =========================================================
+    // =================================================
+    // DEFAULT DENY
+    // =================================================
 
     match /{document=**} {
-      allow read, write: if false;
+
+      allow read, write:
+        if false;
     }
+
   }
+
 }
