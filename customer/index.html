@@ -1,201 +1,291 @@
+
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
 
-<meta charset="UTF-8">
+  <meta charset="UTF-8">
 
-<meta
-  name="viewport"
-  content="width=device-width, initial-scale=1.0">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
 
-<meta
-  name="theme-color"
-  content="#ff6600">
+  <meta
+    name="theme-color"
+    content="#ff6600"
+  >
 
-<link
-  rel="manifest"
-  href="manifest.json">
+  <meta
+    name="description"
+    content="AIO Digital Mall"
+  >
 
-<title>AIO DIGITAL MALL</title>
+  <link
+    rel="manifest"
+    href="./manifest.json"
+  >
 
-<style>
+  <title>AIO DIGITAL MALL</title>
 
-*{
-  box-sizing:border-box;
-}
+  <style>
 
-body{
-  margin:0;
-  font-family:Arial,sans-serif;
-  background:#fff8f0;
-  color:#171717;
-}
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-header{
-  background:#111;
-  color:white;
-  padding:14px 4%;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  position:sticky;
-  top:0;
-  z-index:100;
-}
+    body {
+      font-family:
+        Arial,
+        sans-serif;
+      background: #fff8f0;
+      color: #222;
+    }
 
-.brand{
-  font-weight:900;
-}
+    header {
+      background: #ff6600;
+      color: white;
+      padding: 14px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
 
-button{
-  border:0;
-  border-radius:10px;
-  padding:11px 15px;
-  cursor:pointer;
-  font-weight:700;
-}
+    .topbar {
+      max-width: 1200px;
+      margin: auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
 
-.primary{
-  background:#ff6600;
-  color:white;
-}
+    .logo {
+      font-size: 20px;
+      font-weight: 800;
+    }
 
-.secondary{
-  background:#eee;
-}
+    button {
+      cursor: pointer;
+    }
 
-.danger{
-  background:#e53935;
-  color:white;
-}
+    .header-btn {
+      border: 0;
+      background: white;
+      color: #ff6600;
+      padding: 9px 13px;
+      border-radius: 20px;
+      font-weight: bold;
+    }
 
-.hidden{
-  display:none!important;
-}
+    main {
+      max-width: 1200px;
+      margin: auto;
+      padding: 15px;
+    }
 
-main{
-  max-width:1200px;
-  margin:auto;
-  padding:18px;
-}
+    .hero {
+      margin-top: 10px;
+      min-height: 180px;
+      border-radius: 18px;
+      background:
+        linear-gradient(
+          135deg,
+          #ff6600,
+          #ff9d42
+        );
+      color: white;
+      padding: 28px;
+      display: flex;
+      align-items: center;
+    }
 
-.hero{
-  min-height:220px;
-  border-radius:18px;
-  background:#ff6600 center/cover no-repeat;
-  color:white;
-  display:grid;
-  place-items:center;
-  text-align:center;
-}
+    .hero h1 {
+      font-size: 30px;
+      margin-bottom: 8px;
+    }
 
-.search{
-  width:100%;
-  margin:18px 0;
-  padding:14px;
-  border:1px solid #ddd;
-  border-radius:12px;
-}
+    .search-box {
+      margin: 15px 0;
+      display: flex;
+      gap: 8px;
+    }
 
-.grid{
-  display:grid;
-  grid-template-columns:
-    repeat(auto-fit,minmax(190px,1fr));
-  gap:14px;
-}
+    .search-box input {
+      width: 100%;
+      padding: 14px;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      font-size: 16px;
+    }
 
-.card{
-  background:white;
-  border-radius:16px;
-  overflow:hidden;
-  box-shadow:0 4px 18px #0001;
-}
+    .section {
+      margin-top: 25px;
+    }
 
-.card img{
-  width:100%;
-  height:180px;
-  object-fit:cover;
-}
+    .section h2 {
+      margin-bottom: 12px;
+    }
 
-.card-body{
-  padding:14px;
-}
+    .categories {
+      display: grid;
+      grid-template-columns:
+        repeat(auto-fit, minmax(120px, 1fr));
+      gap: 10px;
+    }
 
-.card-body button{
-  width:100%;
-  margin-top:12px;
-}
+    .category {
+      background: white;
+      border-radius: 14px;
+      padding: 16px 8px;
+      text-align: center;
+      box-shadow:
+        0 2px 8px
+        rgba(0,0,0,.08);
+      font-weight: bold;
+    }
 
-.modal{
-  position:fixed;
-  inset:0;
-  background:#0009;
-  display:grid;
-  place-items:center;
-  padding:20px;
-  z-index:500;
-}
+    .products {
+      display: grid;
+      grid-template-columns:
+        repeat(auto-fill, minmax(190px, 1fr));
+      gap: 15px;
+    }
 
-.modal-box{
-  background:white;
-  width:min(430px,100%);
-  padding:20px;
-  border-radius:18px;
-}
+    .product-card {
+      background: white;
+      border-radius: 15px;
+      overflow: hidden;
+      box-shadow:
+        0 3px 12px
+        rgba(0,0,0,.08);
+    }
 
-.modal input{
-  width:100%;
-  padding:12px;
-  margin:7px 0;
-  border:1px solid #ddd;
-  border-radius:10px;
-}
+    .product-card img {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      background: #eee;
+    }
 
-.cart{
-  position:fixed;
-  right:15px;
-  bottom:15px;
-  width:min(430px,calc(100% - 30px));
-  max-height:85vh;
-  overflow:auto;
-  background:white;
-  padding:20px;
-  border-radius:18px;
-  box-shadow:0 10px 40px #0004;
-  z-index:400;
-}
+    .product-info {
+      padding: 12px;
+    }
 
-.cart-row{
-  display:flex;
-  justify-content:space-between;
-  padding:10px 0;
-  border-bottom:1px solid #eee;
-}
+    .product-info h3 {
+      font-size: 17px;
+      margin-bottom: 7px;
+    }
 
-.cart-row small{
-  display:block;
-  color:#777;
-}
+    .product-info p {
+      color: #666;
+      font-size: 13px;
+      min-height: 18px;
+      margin-bottom: 8px;
+    }
 
-.toast{
-  position:fixed;
-  bottom:20px;
-  left:50%;
-  transform:translate(-50%,30px);
-  opacity:0;
-  background:#111;
-  color:white;
-  padding:12px 18px;
-  border-radius:10px;
-}
+    .product-info strong {
+      display: block;
+      font-size: 19px;
+      margin-bottom: 10px;
+    }
 
-.toast.show{
-  opacity:1;
-  transform:translate(-50%,0);
-}
+    .btn {
+      width: 100%;
+      border: 0;
+      padding: 11px;
+      background: #ff6600;
+      color: white;
+      border-radius: 9px;
+      font-weight: bold;
+    }
 
-</style>
+    .btn:disabled {
+      background: #aaa;
+      cursor: not-allowed;
+    }
+
+    .login-box,
+    .cart-box {
+      background: white;
+      padding: 18px;
+      margin-top: 20px;
+      border-radius: 15px;
+      box-shadow:
+        0 2px 10px
+        rgba(0,0,0,.08);
+    }
+
+    .login-box input {
+      width: 100%;
+      padding: 12px;
+      margin: 7px 0;
+      border: 1px solid #ddd;
+      border-radius: 9px;
+    }
+
+    .timer {
+      text-align: center;
+      background: #222;
+      color: #ffd166;
+      padding: 12px;
+      border-radius: 10px;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+
+    .cart-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 0;
+      border-bottom: 1px solid #eee;
+    }
+
+    .cart-controls {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .cart-controls button {
+      border: 0;
+      background: #ff6600;
+      color: white;
+      width: 30px;
+      height: 30px;
+      border-radius: 7px;
+    }
+
+    footer {
+      margin-top: 40px;
+      padding: 25px;
+      text-align: center;
+      background: #222;
+      color: white;
+    }
+
+    @media (max-width: 600px) {
+
+      .hero h1 {
+        font-size: 23px;
+      }
+
+      .products {
+        grid-template-columns:
+          repeat(2, 1fr);
+      }
+
+      .product-card img {
+        height: 140px;
+      }
+
+    }
+
+  </style>
 
 </head>
 
@@ -203,165 +293,207 @@ main{
 
 <header>
 
-<div class="brand">
-🚩 AIO DIGITAL MALL
-</div>
+  <div class="topbar">
 
-<div>
+    <div class="logo">
+      🚩 AIO DIGITAL MALL
+    </div>
 
-<button
-  data-login
-  class="primary">
-LOGIN
-</button>
+    <div>
 
-<button data-cart>
-🛒 <span id="cartCount">0</span>
-</button>
+      <button
+        class="header-btn"
+        onclick="toggleCart()"
+      >
+        🛒 CART
+        (<span id="cartCount">0</span>)
+      </button>
 
-</div>
+    </div>
+
+  </div>
 
 </header>
 
 <main>
 
-<div
-  id="mainBanner"
-  class="hero">
+  <section class="hero">
 
-<div>
+    <div>
 
-<h1>AIO DIGITAL MALL</h1>
+      <h1>
+        AIO DIGITAL MALL
+      </h1>
 
-<p>
-All Products • Local Shops • COD
-</p>
+      <p>
+        Local Shops • Products • Food • Grocery • COD
+      </p>
 
-</div>
+    </div>
 
-</div>
+  </section>
 
-<input
-  id="search"
-  class="search"
-  placeholder="Search products..."
-  oninput="searchProducts()">
+  <div class="timer">
 
-<h2>
-🔥 LOCAL PRODUCTS
-</h2>
+    FLASH SALE ENDS IN:
+    <span id="timer">
+      02:59:59
+    </span>
 
-<div
-  id="localProducts"
-  class="grid">
-</div>
+  </div>
 
-<h2>
-🛒 AMAZON DEALS
-</h2>
+  <section class="login-box">
 
-<div
-  id="affiliateProducts"
-  class="grid">
-</div>
+    <h2>
+      📱 Mobile OTP Login
+    </h2>
 
-<h2>
-⚡ FLASH SALE
-</h2>
+    <input
+      id="phone"
+      type="tel"
+      placeholder="+919876543210"
+    >
 
-<p>
-Ends in:
-<b id="timer">03:00:00</b>
-</p>
+    <div id="recaptcha"></div>
+
+    <button
+      class="btn"
+      onclick="sendOTP()"
+    >
+      OTP BHEJO
+    </button>
+
+    <input
+      id="otp"
+      type="text"
+      inputmode="numeric"
+      maxlength="6"
+      placeholder="OTP"
+    >
+
+    <button
+      class="btn"
+      onclick="verifyOTP()"
+    >
+      VERIFY
+    </button>
+
+    <p
+      id="loginStatus"
+      style="margin-top:10px"
+    >
+      Guest
+    </p>
+
+  </section>
+
+  <section class="search-box">
+
+    <input
+      id="search"
+      type="search"
+      placeholder="Search products..."
+      oninput="searchProducts()"
+    >
+
+  </section>
+
+  <section class="section">
+
+    <h2>
+      🛍️ Categories
+    </h2>
+
+    <div class="categories">
+
+      <div class="category">🍽️ Hotel & Food</div>
+      <div class="category">🛒 Grocery</div>
+      <div class="category">👕 Fashion</div>
+      <div class="category">📚 Education</div>
+      <div class="category">💎 Jewellery</div>
+      <div class="category">🏠 Property</div>
+      <div class="category">📱 Mobile & AC</div>
+      <div class="category">🛍️ Amazon</div>
+
+    </div>
+
+  </section>
+
+  <section class="section">
+
+    <h2>
+      🔥 LOCAL PRODUCTS
+    </h2>
+
+    <div
+      id="localProducts"
+      class="products"
+    >
+      <p>
+        Firebase se products load ho rahe hain...
+      </p>
+    </div>
+
+  </section>
+
+  <section class="section">
+
+    <h2>
+      🛒 AMAZON DEALS
+    </h2>
+
+    <div
+      id="affiliateProducts"
+      class="products"
+    >
+      <p>
+        Deals load ho rahe hain...
+      </p>
+    </div>
+
+  </section>
+
+  <section
+    id="cartBox"
+    class="cart-box"
+  >
+
+    <h2>
+      🛒 Your Cart
+    </h2>
+
+    <div id="cartItems">
+      <p>Cart khali hai.</p>
+    </div>
+
+    <h3 style="margin:15px 0">
+
+      Total:
+      ₹<span id="cartTotal">0</span>
+
+    </h3>
+
+    <button
+      class="btn"
+      onclick="placeCODOrder()"
+    >
+      📦 ORDER KARO - COD
+    </button>
+
+  </section>
 
 </main>
 
-<div
-  id="loginBox"
-  class="modal hidden">
+<footer>
 
-<div class="modal-box">
+  © 2026 AIO DIGITAL MALL
 
-<h2>
-Mobile OTP Login
-</h2>
-
-<input
-  id="phone"
-  placeholder="+919876543210">
-
-<button
-  class="primary"
-  onclick="sendOTP()">
-OTP BHEJO
-</button>
-
-<input
-  id="otp"
-  placeholder="OTP">
-
-<button
-  class="primary"
-  onclick="verifyOTP()">
-VERIFY
-</button>
-
-<div id="recaptcha"></div>
-
-<button
-  data-close-login
-  class="secondary">
-CLOSE
-</button>
-
-</div>
-
-</div>
-
-<div
-  id="cartBox"
-  class="cart hidden">
-
-<h2>
-🛒 Your Cart
-</h2>
-
-<div id="cartItems"></div>
-
-<h3>
-Total:
-₹<span id="cartTotal">0</span>
-</h3>
-
-<textarea
-  id="address"
-  rows="4"
-  style="width:100%;padding:10px"
-  placeholder="Complete delivery address">
-</textarea>
-
-<button
-  class="primary"
-  onclick="placeOrder()"
-  style="width:100%">
-PLACE COD ORDER
-</button>
-
-<button
-  class="secondary"
-  onclick="toggleCart(false)"
-  style="width:100%;margin-top:8px">
-CLOSE
-</button>
-
-</div>
-
-<div id="toast" class="toast"></div>
+</footer>
 
 <script
   type="module"
-  src="app.js">
-</script>
+  src="./app.js"
+></script>
 
 </body>
 
