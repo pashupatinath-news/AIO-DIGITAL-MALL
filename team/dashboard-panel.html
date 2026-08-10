@@ -3,25 +3,862 @@
 
 <head>
 
-<meta charset="UTF-8">
+  <meta charset="UTF-8">
 
-<meta
-  name="viewport"
-  content="width=device-width, initial-scale=1.0">
+  <meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+  >
 
-<title>AIO DIGITAL MALL — Dashboard Panel</title>
+  <title>AIO DIGITAL MALL - Full Team Panel</title>
 
-<meta
-  http-equiv="refresh"
-  content="0;url=index.html">
+  <style>
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial,sans-serif;
+      background: #101010;
+      color: #fff;
+    }
+
+    header {
+      background: #ff6600;
+      padding: 15px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    main {
+      max-width: 1250px;
+      margin: auto;
+      padding: 15px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns:
+        repeat(auto-fit,minmax(240px,1fr));
+      gap: 15px;
+    }
+
+    .card {
+      background: #1d1d1d;
+      padding: 18px;
+      border-radius: 14px;
+      margin-bottom: 15px;
+    }
+
+    input,
+    select {
+      width: 100%;
+      padding: 11px;
+      margin: 5px 0;
+      background: #252525;
+      color: white;
+      border: 1px solid #444;
+      border-radius: 8px;
+    }
+
+    button {
+      border: 0;
+      padding: 10px 13px;
+      border-radius: 8px;
+      background: #ff6600;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      margin: 4px 2px;
+    }
+
+    .danger {
+      background: #d32f2f;
+    }
+
+    .order,
+    .product {
+      background: #292929;
+      padding: 13px;
+      border-radius: 10px;
+      margin: 8px 0;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns:
+        repeat(auto-fit,minmax(150px,1fr));
+      gap: 10px;
+    }
+
+    .stat {
+      background: #222;
+      padding: 16px;
+      border-radius: 10px;
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 28px;
+      color: #ff8a3d;
+    }
+
+  </style>
 
 </head>
 
 <body>
 
-<p>
-Opening Team Dashboard Panel...
-</p>
+<header>
+
+  <strong>
+    🚩 AIO DIGITAL MALL
+  </strong>
+
+  <button
+    onclick="location.href='dashboard.html'"
+  >
+    DASHBOARD
+  </button>
+
+  <button
+    onclick="teamLogout()"
+  >
+    LOGOUT
+  </button>
+
+</header>
+
+<main>
+
+  <div class="stats">
+
+    <div class="stat">
+      Orders
+      <strong id="ordersCount">0</strong>
+    </div>
+
+    <div class="stat">
+      New Orders
+      <strong id="newOrdersCount">0</strong>
+    </div>
+
+    <div class="stat">
+      Products
+      <strong id="productsCount">0</strong>
+    </div>
+
+    <div class="stat">
+      Shops
+      <strong id="shopsCount">0</strong>
+    </div>
+
+  </div>
+
+  <br>
+
+  <div class="grid">
+
+    <div class="card">
+
+      <h2>🏪 Add Local Shop</h2>
+
+      <input
+        id="shopName"
+        placeholder="Shop Name"
+      >
+
+      <select id="shopCategory">
+
+        <option>Hotel & Food</option>
+        <option>Grocery</option>
+        <option>Fashion</option>
+        <option>Electronics</option>
+        <option>Education</option>
+        <option>Jewellery</option>
+        <option>Property</option>
+        <option>Mobile & AC</option>
+
+      </select>
+
+      <input
+        id="shopPhone"
+        placeholder="Shop Phone"
+      >
+
+      <input
+        id="shopAddress"
+        placeholder="Shop Address"
+      >
+
+      <button onclick="saveShop()">
+        ADD SHOP
+      </button>
+
+    </div>
+
+    <div class="card">
+
+      <h2>📦 Add Local Product</h2>
+
+      <input
+        id="pName"
+        placeholder="Product Name"
+      >
+
+      <input
+        id="pPrice"
+        type="number"
+        placeholder="Price ₹"
+      >
+
+      <input
+        id="pPhoto"
+        placeholder="Product Image URL"
+      >
+
+      <select id="pCategory">
+
+        <option>Grocery</option>
+        <option>Hotel & Food</option>
+        <option>Fashion</option>
+        <option>Electronics</option>
+        <option>Education</option>
+        <option>Jewellery</option>
+        <option>Property</option>
+        <option>Mobile & AC</option>
+
+      </select>
+
+      <input
+        id="pStock"
+        type="number"
+        value="1"
+        min="0"
+        placeholder="Stock"
+      >
+
+      <input
+        id="pDescription"
+        placeholder="Description"
+      >
+
+      <button onclick="saveProduct()">
+        SAVE PRODUCT
+      </button>
+
+    </div>
+
+    <div class="card">
+
+      <h2>🛒 Affiliate Product</h2>
+
+      <input
+        id="aName"
+        placeholder="Amazon Product Name"
+      >
+
+      <input
+        id="aPrice"
+        type="number"
+        placeholder="Display Price ₹"
+      >
+
+      <input
+        id="aPhoto"
+        placeholder="Product Image URL"
+      >
+
+      <input
+        id="aLink"
+        placeholder="Amazon Product Link"
+      >
+
+      <button onclick="saveAffiliate()">
+        SAVE AFFILIATE
+      </button>
+
+    </div>
+
+  </div>
+
+  <div class="card">
+
+    <h2>📦 Live COD Orders</h2>
+
+    <div id="ordersList">
+      Loading...
+    </div>
+
+  </div>
+
+  <div class="card">
+
+    <h2>🛍️ Live Products</h2>
+
+    <div id="productsList">
+      Loading...
+    </div>
+
+  </div>
+
+  <div class="card">
+
+    <h2>🏪 Live Shops</h2>
+
+    <div id="shopsList">
+      Loading...
+    </div>
+
+  </div>
+
+</main>
+
+<script type="module">
+
+import {
+  auth,
+  db
+} from "./firebaseConfig.js";
+
+import {
+  onAuthStateChanged,
+  signOut
+} from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
+
+import {
+  collection,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  onSnapshot,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
+
+// =====================================================
+// AUTH
+// =====================================================
+
+window.teamLogout =
+async function () {
+
+  await signOut(auth);
+
+  location.href =
+    "index.html";
+};
+
+onAuthStateChanged(
+  auth,
+  user => {
+
+    if (!user) {
+
+      console.log(
+        "Team panel guest mode"
+      );
+    }
+
+  }
+);
+
+// =====================================================
+// SHOP
+// =====================================================
+
+window.saveShop =
+async function () {
+
+  const name =
+    document.getElementById(
+      "shopName"
+    ).value.trim();
+
+  const category =
+    document.getElementById(
+      "shopCategory"
+    ).value;
+
+  const phone =
+    document.getElementById(
+      "shopPhone"
+    ).value.trim();
+
+  const address =
+    document.getElementById(
+      "shopAddress"
+    ).value.trim();
+
+  if (!name) {
+
+    alert("Shop name daalo.");
+
+    return;
+  }
+
+  await addDoc(
+    collection(db,"shops"),
+    {
+      name,
+      category,
+      phone,
+      address,
+      createdAt:
+        serverTimestamp()
+    }
+  );
+
+  alert("Shop saved ✅");
+
+  document.getElementById(
+    "shopName"
+  ).value = "";
+
+};
+
+// =====================================================
+// LOCAL PRODUCT
+// =====================================================
+
+window.saveProduct =
+async function () {
+
+  const name =
+    document.getElementById(
+      "pName"
+    ).value.trim();
+
+  const price =
+    Number(
+      document.getElementById(
+        "pPrice"
+      ).value
+    );
+
+  const photo =
+    document.getElementById(
+      "pPhoto"
+    ).value.trim();
+
+  const category =
+    document.getElementById(
+      "pCategory"
+    ).value;
+
+  const stock =
+    Number(
+      document.getElementById(
+        "pStock"
+      ).value
+    );
+
+  const description =
+    document.getElementById(
+      "pDescription"
+    ).value.trim();
+
+  if (!name || price < 0) {
+
+    alert(
+      "Product name aur price required hai."
+    );
+
+    return;
+  }
+
+  await addDoc(
+    collection(db,"products"),
+    {
+      name,
+      price,
+      photo,
+      category,
+      stock,
+      description,
+      type: "local",
+      createdAt:
+        serverTimestamp()
+    }
+  );
+
+  alert("Product saved ✅");
+
+};
+
+// =====================================================
+// AFFILIATE
+// =====================================================
+
+window.saveAffiliate =
+async function () {
+
+  const name =
+    document.getElementById(
+      "aName"
+    ).value.trim();
+
+  const price =
+    Number(
+      document.getElementById(
+        "aPrice"
+      ).value
+    );
+
+  const photo =
+    document.getElementById(
+      "aPhoto"
+    ).value.trim();
+
+  const link =
+    document.getElementById(
+      "aLink"
+    ).value.trim();
+
+  if (!name || !link) {
+
+    alert(
+      "Product name aur link required hai."
+    );
+
+    return;
+  }
+
+  await addDoc(
+    collection(db,"products"),
+    {
+      name,
+      price,
+      photo,
+      link,
+      type: "affiliate",
+      createdAt:
+        serverTimestamp()
+    }
+  );
+
+  alert("Affiliate product saved ✅");
+
+};
+
+// =====================================================
+// ORDERS
+// =====================================================
+
+onSnapshot(
+  collection(db,"orders"),
+  snapshot => {
+
+    document.getElementById(
+      "ordersCount"
+    ).textContent =
+      snapshot.size;
+
+    document.getElementById(
+      "newOrdersCount"
+    ).textContent =
+      snapshot.docs.filter(
+        d =>
+          d.data().status === "NEW"
+      ).length;
+
+    const list =
+      document.getElementById(
+        "ordersList"
+      );
+
+    if (!snapshot.size) {
+
+      list.innerHTML =
+        "<p>No orders.</p>";
+
+      return;
+    }
+
+    list.innerHTML =
+      snapshot.docs.map(
+        item => {
+
+          const o =
+            item.data();
+
+          return `
+
+            <div class="order">
+
+              <strong>
+                Order ID:
+              </strong>
+
+              ${item.id}
+
+              <br>
+
+              <strong>
+                Phone:
+              </strong>
+
+              ${o.phone || "-"}
+
+              <br>
+
+              <strong>
+                Address:
+              </strong>
+
+              ${o.address || "-"}
+
+              <br>
+
+              <strong>
+                Total:
+              </strong>
+
+              ₹${Number(
+                o.total || 0
+              ).toLocaleString("en-IN")}
+
+              <br>
+
+              <strong>
+                Status:
+              </strong>
+
+              ${o.status || "NEW"}
+
+              <br>
+
+              <button
+                onclick="updateOrder(
+                  '${item.id}',
+                  'CONFIRMED'
+                )"
+              >
+                CONFIRM
+              </button>
+
+              <button
+                onclick="updateOrder(
+                  '${item.id}',
+                  'OUT_FOR_DELIVERY'
+                )"
+              >
+                OUT FOR DELIVERY
+              </button>
+
+              <button
+                onclick="updateOrder(
+                  '${item.id}',
+                  'DELIVERED'
+                )"
+              >
+                DELIVERED
+              </button>
+
+            </div>
+
+          `;
+        }
+      ).join("");
+
+  }
+);
+
+// =====================================================
+// UPDATE ORDER
+// =====================================================
+
+window.updateOrder =
+async function (
+  id,
+  status
+) {
+
+  await updateDoc(
+    doc(db,"orders",id),
+    {
+      status,
+      updatedAt:
+        serverTimestamp()
+    }
+  );
+
+};
+
+// =====================================================
+// PRODUCTS
+// =====================================================
+
+onSnapshot(
+  collection(db,"products"),
+  snapshot => {
+
+    document.getElementById(
+      "productsCount"
+    ).textContent =
+      snapshot.size;
+
+    const list =
+      document.getElementById(
+        "productsList"
+      );
+
+    list.innerHTML =
+      snapshot.docs.map(
+        item => {
+
+          const p =
+            item.data();
+
+          return `
+
+            <div class="product">
+
+              <strong>
+                ${p.name || "Product"}
+              </strong>
+
+              <br>
+
+              ₹${Number(
+                p.price || 0
+              ).toLocaleString("en-IN")}
+
+              <br>
+
+              Type:
+              ${p.type || "local"}
+
+              <br>
+
+              Stock:
+              ${p.stock ?? "-"}
+
+              <br>
+
+              <button
+                class="danger"
+                onclick="deleteProduct(
+                  '${item.id}'
+                )"
+              >
+                DELETE
+              </button>
+
+            </div>
+          `;
+        }
+      ).join("");
+
+  }
+);
+
+window.deleteProduct =
+async function(id) {
+
+  if (
+    !confirm(
+      "Product delete kare?"
+    )
+  ) {
+    return;
+  }
+
+  await deleteDoc(
+    doc(db,"products",id)
+  );
+
+};
+
+// =====================================================
+// SHOPS
+// =====================================================
+
+onSnapshot(
+  collection(db,"shops"),
+  snapshot => {
+
+    document.getElementById(
+      "shopsCount"
+    ).textContent =
+      snapshot.size;
+
+    const list =
+      document.getElementById(
+        "shopsList"
+      );
+
+    list.innerHTML =
+      snapshot.docs.map(
+        item => {
+
+          const s =
+            item.data();
+
+          return `
+
+            <div class="product">
+
+              <strong>
+                ${s.name || "Shop"}
+              </strong>
+
+              <br>
+
+              Category:
+              ${s.category || "-"}
+
+              <br>
+
+              Phone:
+              ${s.phone || "-"}
+
+              <br>
+
+              Address:
+              ${s.address || "-"}
+
+              <br>
+
+              <button
+                class="danger"
+                onclick="deleteShop(
+                  '${item.id}'
+                )"
+              >
+                DELETE
+              </button>
+
+            </div>
+
+          `;
+        }
+      ).join("");
+
+  }
+);
+
+window.deleteShop =
+async function(id) {
+
+  if (
+    !confirm(
+      "Shop delete kare?"
+    )
+  ) {
+    return;
+  }
+
+  await deleteDoc(
+    doc(db,"shops",id)
+  );
+
+};
+
+</script>
 
 </body>
 
